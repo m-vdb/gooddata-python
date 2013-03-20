@@ -90,27 +90,21 @@ class Webdav(Connection):
         return the name of the temporary file, hence the name of the directory
         created in webdav uploads folder
         '''
-        archive, sli_manifest = create_archive(data, sli_manifest)
+        archive = create_archive(data, sli_manifest)
         dir_name = os.path.basename(archive)
         # create the folder on WebDav
         self.mkcol(uri=self.UPLOADS_URI % dir_name)
         # open the files to read them
         f_archive = open(archive, 'rb')
-        f_sli_manifest = open(sli_manifest, 'rb')
 
         # upload the files to WebDav
         archive_uri = ''.join((self.UPLOADS_URI % dir_name, DEFAULT_ARCHIVE_NAME))
-        sli_uri = ''.join((self.UPLOADS_URI % dir_name, DLI_MANIFEST_FILENAME))
         self.put(uri=archive_uri, data=f_archive.read(),
                  headers={'Content-Type': 'application/zip'})
-        self.put(uri=sli_uri, data=f_sli_manifest.read(),
-                 headers={'Content-Type': 'application/json'})
 
         # close and remove the files
         f_archive.close()
-        f_sli_manifest.close()
         os.remove(archive)
-        os.remove(sli_manifest)
 
         return dir_name
 
