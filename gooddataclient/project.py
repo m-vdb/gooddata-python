@@ -92,4 +92,9 @@ class Project(object):
                     raise UploadFailed(status)
                 time.sleep(0.5)
 
-
+    def log(self, error, error_code=None, **kwargs):
+        """
+        A hook to log errors
+        """
+        logger.error(error['message'] % tuple(error['parameters']))
+        logger.debug(''.join(kwargs.values()))
