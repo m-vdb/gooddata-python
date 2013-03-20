@@ -55,17 +55,28 @@ class Attribute(Column):
         folder_statement = ''
         if self.folder:
             folder_statement = ', FOLDER {dim.%s}' % self.folder
-        fks = ''
+
         maql = []
-        maql.append('CREATE ATTRIBUTE {attr.%s.%s} VISUAL(TITLE "%s"%s) AS KEYS {f_%s.id} FULLSET%s;'\
-                    % (self.schema_name, self.name, self.title, folder_statement,
-                       self.schema_name, fks))
-        maql.append('ALTER DATASET {dataset.%s} ADD {attr.%s.%s};'\
+        if isinstance(self, ConnectionPoint):
+            maql.append('CREATE ATTRIBUTE {attr.%s.%s} VISUAL(TITLE "%s"%s) AS KEYS {f_%s.id} FULLSET;'
+                        % (self.schema_name, self.name, self.title, folder_statement,
+                           self.schema_name))
+        else:
+            maql.append('CREATE ATTRIBUTE {attr.%s.%s} VISUAL(TITLE "%s"%s) AS KEYS {d_%s_%s.id} FULLSET, {f_%s.%s_id};'
+                        % (self.schema_name, self.name, self.title, folder_statement,
+                           self.schema_name, self.name, self.schema_name, self.name))
+        maql.append('ALTER DATASET {dataset.%s} ADD {attr.%s.%s};'
                     % (self.schema_name, self.schema_name, self.name))
+        if not isinstance(self, ConnectionPoint):
+            maql.append('ALTER ATTRIBUTE {attr.%s.%s} ADD LABELS {label.%s.%s} VISUAL(TITLE "%s") AS {d_%s_%s.nm_%s};'
+                        % (self.schema_name, self.name, self.schema_name, self.name,
+                           self.title, self.schema_name, self.name, self.name))
+            maql.append('ALTER ATTRIBUTE {attr.%s.%s} DEFAULT LABEL {label.%s.%s};'
+                        % (self.schema_name, self.name, self.schema_name, self.name))
 
         if self.dataType:
             data_type = 'VARCHAR(32)' if self.dataType == 'IDENTITY' else self.dataType
-            maql.append('ALTER DATATYPE {f_%s.nm_%s} %s;' \
+            maql.append('ALTER DATATYPE {f_%s.nm_%s} %s;'
                         % (self.schema_name, self.name, data_type))
         else:
             maql.append('')
@@ -167,11 +178,11 @@ class Label(Column):
 
     def get_maql(self):
         maql = []
-        maql.append('# ADD LABELS TO ATTRIBUTES')
-        maql.append('ALTER ATTRIBUTE {attr.%s.%s} ADD LABELS {label.%s.%s.%s} VISUAL(TITLE "%s") AS {f_%s.nm_%s};' \
+        maql.append('# ADD LABELS')
+        maql.append('ALTER ATTRIBUTE {attr.%s.%s} ADD LABELS {label.%s.%s.%s} VISUAL(TITLE "%s") AS {d_%s_%s.nm_%s};'
                     % (self.schema_name, self.reference, self.schema_name,
                        self.reference, self.name, self.title, self.schema_name,
-                       self.name))
+                       self.reference, self.name))
         # TODO: DATATYPE
         maql.append('')
         return '\n'.join(maql)

@@ -12,6 +12,7 @@ from gooddataclient.archiver import CSV_DATA_FILENAME
 
 logger = logging.getLogger("gooddataclient")
 
+
 class Dataset(object):
 
     DATASETS_URI = '/gdc/md/%s/data/sets'
@@ -19,7 +20,6 @@ class Dataset(object):
     def __init__(self, project):
         self.project = project
         self.connection = project.connection
-
 
     class Meta:
         column_order = None
@@ -130,7 +130,6 @@ class Dataset(object):
                                                      "endOfLine": "\n"
                                                      }}}
 
-
     def get_maql(self):
         maql = []
 
@@ -146,11 +145,11 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
         if attribute_folders or fact_folders:
             maql.append('# CREATE THE FOLDERS THAT GROUP ATTRIBUTES AND FACTS')
             for folder, folder_title in attribute_folders:
-                maql.append('CREATE FOLDER {dim.%s} VISUAL(TITLE "%s") TYPE ATTRIBUTE;' \
+                maql.append('CREATE FOLDER {dim.%s} VISUAL(TITLE "%s") TYPE ATTRIBUTE;'
                             % (folder, folder_title))
             maql.append('')
             for folder, folder_title in fact_folders:
-                maql.append('CREATE FOLDER {ffld.%s} VISUAL(TITLE "%s") TYPE FACT;' \
+                maql.append('CREATE FOLDER {ffld.%s} VISUAL(TITLE "%s") TYPE FACT;'
                             % (folder, folder_title))
             maql.append('')
 
@@ -178,8 +177,8 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
             if isinstance(column, Reference):
                 maql.append(column.get_maql())
 
-        default_set = False
         for column in column_list:
+            default_set = False
             if isinstance(column, Label):
                 maql.append(column.get_maql())
                 if not default_set:
@@ -190,16 +189,15 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
         for column in column_list:
             if isinstance(column, ConnectionPoint):
                 cp = True
+                maql.append('# ADD LABEL TO CONNECTION POINT')
                 maql.append(column.get_original_label_maql())
 
         # TODO: not sure where this came from in Department example, wild guess only!
         if not cp:
-            maql.append('ALTER ATTRIBUTE {attr.%s.%s} ADD LABELS {label.%s.%s} VISUAL(TITLE "%s") AS {f_%s.nm_%s};'\
-                    % (to_identifier(self.schema_name), to_identifier(self.schema_name),
-                       to_identifier(self.schema_name), to_identifier(self.schema_name),
-                       to_title(self.schema_name), to_identifier(self.schema_name),
-                       to_identifier(self.schema_name)))
-
+            maql.append('CREATE ATTRIBUTE {attr.%s.factsof} VISUAL(TITLE "Records of %s") AS KEYS {f_%s.id} FULLSET;'
+                        % (to_identifier(self.schema_name), to_title(self.schema_name), to_identifier(self.schema_name)))
+            maql.append('ALTER DATASET {dataset.%s} ADD {attr.%s.factsof};'
+                        % (to_identifier(self.schema_name), to_identifier(self.schema_name)))
         maql.append("""# SYNCHRONIZE THE STORAGE AND DATA LOADING INTERFACES WITH THE NEW LOGICAL MODEL
 SYNCHRONIZE {dataset.%s};
 """ % to_identifier(self.schema_name))
