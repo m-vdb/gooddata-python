@@ -1,8 +1,11 @@
 import os
 import urllib2
 import cookielib
-import simplejson as json
 import logging
+
+import simplejson as json
+import requests
+from requests.exceptions import HTTPError
 
 from gooddataclient.exceptions import AuthenticationError
 from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME
@@ -68,27 +71,45 @@ class Connection(object):
         except KeyError:
             raise AuthenticationError('No userLogin information in response to login.')
 
-    def request(self, uri, data=None, headers=JSON_HEADERS, method=None):
-        logger.debug(uri)
-        #data to json
-        if data and isinstance(data, dict):
-            data = json.dumps(data)
-        #uri with host
-        full_uri = ''.join((self.HOST, uri))
-        #updating headers
-        headers['Content-Length'] = str(len(data)) if data else 0
-        request = RequestWithMethod(method, full_uri, data, headers)
-        try:
-            response = urllib2.urlopen(request)
-        except urllib2.URLError, err:
-            logger.error(err)
-            raise
-        if response.info().gettype() == 'application/json':
-            return json.loads(response.read())
+            data = {
+                'postUserLogin': {
+                    'login': username,
+                    'password': password,
+                    'remember': 1,
+                }
+            }
+            r1 = self.post(uri=self.LOGIN_URI, data=json.dumps(data), login=True)
+            r1.raise_for_status()
+            self.cookies = self.webdav.cookies = r1.cookies
+
+            r2 = self.get(uri=self.TOKEN_URI)
+            r2.raise_for_status()
+        except HTTPError, err:
+            raise AuthenticationError(str(err))
+
+    def get(self, uri):
+        logger.debug('GET: %s' % uri)
+        headers = {'content-type': 'application/json'}
+        response = requests.get(self.HOST + uri, cookies=self.cookies,
+                                headers=headers, auth=(self.username, self.password))
+        if response.headers['content-type'] == 'application/json':
+            return response.json()
         return response
 
+    def post(self, uri, data, headers={'content-type': 'application/json'}, login=False):
+        logger.debug('POST: %s' % uri)
+        kwargs = {
+            'url': self.HOST + uri,
+            'data': data,
+            'headers': headers
+        }
+        if not login:
+            kwargs['cookies'] = self.cookies
+
+        return requests.post(**kwargs)
+
     def get_metadata(self):
-        return self.request(self.MD_URI)
+        return self.get(self.MD_URI)
 
 
 class Webdav(Connection):
