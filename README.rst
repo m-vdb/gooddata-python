@@ -3,6 +3,7 @@ GoodData client library written in python.
 Requires
 ========
 * simplejson <http://pypi.python.org/pypi/simplejson/>
+* requests <http://pypi.python.org/pypi/requests/>
 
 Usage
 =====
