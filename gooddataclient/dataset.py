@@ -54,18 +54,19 @@ class Dataset(object):
         return columns
 
     def get_datasets_metadata(self):
-        return self.connection.request(self.DATASETS_URI % self.project.id)
+        return self.connection.get(uri=self.DATASETS_URI % self.project.id)
 
     def get_metadata(self, name):
-        response = self.get_datasets_metadata()
-        for dataset in response['dataSetsInfo']['sets']:
+        datasets = self.get_datasets_metadata().json()['dataSetsInfo']['sets']
+
+        for dataset in datasets:
             if dataset['meta']['title'] == name:
                 return dataset
         raise DataSetNotFoundError('DataSet %s not found' % name)
 
     def delete(self, name):
         dataset = self.get_metadata(name)
-        return self.connection.request(dataset['meta']['uri'], method='DELETE')
+        return self.connection.delete(uri=dataset['meta']['uri'])
 
     def data(self):
         raise NotImplementedError
