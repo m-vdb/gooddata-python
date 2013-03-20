@@ -96,7 +96,7 @@ class Dataset(object):
         attribute_folders, fact_folders = [], []
         for column in self.get_columns():
             if column.folder:
-                if isinstance(column, (Attribute, Label, ConnectionPoint, Reference, Date)):
+                if isinstance(column, (Attribute, Label, ConnectionPoint, Reference)):
                     if (column.folder, column.folder_title) not in attribute_folders:
                         attribute_folders.append((column.folder, column.folder_title))
                 if isinstance(column, (Fact, Date)):
