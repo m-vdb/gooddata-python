@@ -10,6 +10,11 @@ from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME, DLI_MA
 
 logger = logging.getLogger("gooddataclient")
 
+JSON_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+}
+
 
 class Connection(object):
 
@@ -34,7 +39,7 @@ class Connection(object):
                     'remember': 1,
                 }
             }
-            r1 = self.post(uri=self.LOGIN_URI, data=json.dumps(data), login=True)
+            r1 = self.post(uri=self.LOGIN_URI, data=data, login=True)
             r1.raise_for_status()
             self.cookies = self.webdav.cookies = r1.cookies
 
@@ -48,24 +53,27 @@ class Connection(object):
 
     def get(self, uri):
         logger.debug('GET: %s' % uri)
-        headers = {'content-type': 'application/json'}
         response = requests.get(self.HOST + uri, cookies=self.cookies,
-                                headers=headers, auth=(self.username, self.password))
-        if response.headers['content-type'] == 'application/json':
-            return response.json()
+                                headers=JSON_HEADERS, auth=(self.username, self.password))
         return response
 
-    def post(self, uri, data, headers={'content-type': 'application/json'}, login=False):
+    def post(self, uri, data, headers=JSON_HEADERS, login=False):
         logger.debug('POST: %s' % uri)
         kwargs = {
             'url': self.HOST + uri,
-            'data': data,
-            'headers': headers
+            'data': json.dumps(data),
+            'headers': headers,
+            'auth': (self.username, self.password)
         }
         if not login:
             kwargs['cookies'] = self.cookies
 
         return requests.post(**kwargs)
+
+    def delete(self, uri):
+        logger.debug('DELETE: %s' % uri)
+        r = requests.delete(url=self.HOST + uri, auth=(self.username, self.password))
+        r.raise_for_status()
 
     def get_metadata(self):
         return self.get(self.MD_URI)
@@ -119,6 +127,5 @@ class Webdav(Connection):
         r.raise_for_status()
 
     def delete(self, dir_name):
-        logger.debug('DELETE: %s' % dir_name)
-        r = requests.delete(url=self.HOST + self.UPLOADS_URI % dir_name, auth=(self.username, self.password))
-        r.raise_for_status()
+        uri = self.UPLOADS_URI % dir_name
+        super(Webdav, self).delete(uri=uri)
