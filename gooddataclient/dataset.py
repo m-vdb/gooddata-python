@@ -62,7 +62,11 @@ class Dataset(object):
         for dataset in datasets:
             if dataset['meta']['title'] == name:
                 return dataset
-        raise DataSetNotFoundError('DataSet %s not found' % name)
+        err_json = {
+            'sets': datasets,
+            'project_name': name
+        }
+        raise DataSetNotFoundError('DataSet %s not found' % name, err_json)
 
     def delete(self, name):
         dataset = self.get_metadata(name)

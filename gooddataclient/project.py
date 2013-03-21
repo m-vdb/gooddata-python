@@ -5,7 +5,8 @@ import logging
 from requests.exceptions import HTTPError
 
 from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
-    ProjectNotFoundError, MaqlExecutionFailed
+                                      ProjectNotFoundError, MaqlExecutionFailed,
+                                      get_api_msg
 
 logger = logging.getLogger("gooddataclient")
 
@@ -40,7 +41,11 @@ class Project(object):
             if link['title'] == name:
                 logger.debug('Retrieved Project identifier for %s: %s' % (name, link['identifier']))
                 return link['identifier']
-        raise ProjectNotFoundError('Failed to retrieve Project identifier for %s' % (name))
+        err_json {
+            'links': data['about']['links'],
+            'project_name': name,
+        }
+        raise ProjectNotFoundError('Failed to retrieve Project identifier for %s' % (name), err_json)
 
     # TODO cannot test this....
     def create(self, name, desc=None, template_uri=None):
@@ -70,8 +75,20 @@ class Project(object):
         try:
             uri = '/'.join((self.PROJECTS_URI, self.id))
             self.connection.delete(uri=uri)
-        except (TypeError, urllib2.URLError):
-            raise ProjectNotOpenedError()
+        except HTTPError, err:
+            err_json = {
+                'project_id': self.id,
+                'uri': uri,
+                'status_code': err.response.status_code,
+                'response': err.response.content
+            }
+            raise ProjectNotOpenedError('Project does not seem to be opened: %s' % self.id, err_json)
+        except TypeError:
+            err_json = {
+                'project_id': self.id,
+                'uri': uri
+            }
+            raise ProjectNotOpenedError('Project does not seem to be opened: %s' % self.id, err_json)
 
     def execute_maql(self, maql):
         if not maql:
@@ -82,14 +99,17 @@ class Project(object):
             response.raise_for_status()
 
             if len(response.json()['uris']) == 0:
-                raise MaqlExecutionFailed
+                raise MaqlExecutionFailed('Length of `uris` array should not be 0', response.json())
         except HTTPError, err:
             err_json = err.response.json()['error']
-            err_code = err.response.status_code
-            self.log(error=err_json, error_code=err_code, maql=maql)
+            err_json.update({
+                'status_code': err.response.status_code,
+                'maql': maql,
+            })
 
-            if err_code != 504:
-                raise MaqlExecutionFailed
+            # FIXME : this should be removed when using ldm/manage2
+            if err.response.status_code != 504:
+                raise MaqlExecutionFailed(get_api_msg(err_json),err_json)
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         try:
@@ -97,15 +117,16 @@ class Project(object):
                                             {'pullIntegration': dir_name})
             response.raise_for_status()
         except HTTPError, err:
-            err_code = err.response.status_code
-            if err_code == 401:
+            status_code = err.response.status_code
+            if status_code == 401:
                 self.connection.relogin()
                 response = self.connection.post(self.PULL_URI % self.id,
                                                 {'pullIntegration': dir_name})
             else:
                 err_json = err.response.json()['error']
-                self.log(error=err_json, error_code=err_code)
-                raise
+                err_json['status_code'] = status_code
+                err_json['dir_name'] = dir_name
+                raise UploadFailed(get_api_msg(err_json), err_json)
         task_uri = response.json()['pullTask']['uri']
         # checkLoadingStatus in AbstractConnector.java
         if wait_for_finish:
@@ -115,12 +136,5 @@ class Project(object):
                 if status == 'OK':
                     break
                 if status in ('ERROR', 'WARNING'):
-                    raise UploadFailed(status)
+                    raise UploadFailed('Failed with status: %s' % status, {'dir_name': dir_name})
                 time.sleep(0.5)
-
-    def log(self, error, error_code=None, **kwargs):
-        """
-        A hook to log errors
-        """
-        logger.error(error['message'] % tuple(error['parameters']))
-        logger.debug(''.join(kwargs.values()))
