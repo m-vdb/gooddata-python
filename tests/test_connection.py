@@ -33,7 +33,7 @@ class TestConnection(unittest.TestCase):
         tmp_file = write_tmp_file(uploaded_file)
         zip_file = ZipFile(tmp_file, "r")
         self.assertEquals(None, zip_file.testzip())
-        self.assertEquals(zip_file.namelist(), ['data.csv', ])
+        self.assertEquals(zip_file.namelist(), ['data.csv', 'upload_info.json'])
         zip_file.close()
         os.remove(tmp_file)
         connection.webdav.delete(dir_name)
