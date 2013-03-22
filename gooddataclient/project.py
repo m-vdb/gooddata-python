@@ -6,7 +6,7 @@ from requests.exceptions import HTTPError
 
 from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
                                       ProjectNotFoundError, MaqlExecutionFailed, \
-                                      get_api_msg
+                                      get_api_msg, GetSLIManifestFailed
 
 logger = logging.getLogger("gooddataclient")
 
@@ -25,6 +25,7 @@ class Project(object):
 
     PROJECTS_URI = '/gdc/projects'
     MAQL_EXEC_URI = '/gdc/md/%s/ldm/manage'
+    SLI_URI = '/gdc/md/%s/ldm/singleloadinterface/{dataset.%s}/manifest'
     PULL_URI = '/gdc/md/%s/etl/pull'
 
     def __init__(self, connection):
@@ -138,3 +139,21 @@ class Project(object):
                 if status in ('ERROR', 'WARNING'):
                     raise UploadFailed('Failed with status: %s' % status, {'dir_name': dir_name})
                 time.sleep(0.5)
+
+    def get_sli_manifest(self, dataset_name):
+        """
+        Get the SLI manifest from API entry point.
+        """
+
+        try:
+            uri = self.SLI_URI % (self.id, dataset_name)
+            response = self.connection.get(uri)
+            response.raise_for_status()
+        except HTTPError, err:
+            err_json = {
+                'error': err.response.json()['error'],
+                'status_code': err.response.status_code,
+            }
+            raise GetSLIManifestFailed('Getting SLI manifest failed : %s' % err.response.status_code, err_json)
+        else:
+            return response.json()
