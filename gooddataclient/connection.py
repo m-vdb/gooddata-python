@@ -74,6 +74,7 @@ class Connection(object):
         logger.debug('DELETE: %s' % uri)
         r = requests.delete(url=self.HOST + uri, auth=(self.username, self.password))
         r.raise_for_status()
+        return r
 
     def get_metadata(self):
         return self.get(self.MD_URI)
