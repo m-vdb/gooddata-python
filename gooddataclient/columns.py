@@ -28,23 +28,6 @@ class Column(object):
                 values.append((key, value))
         return values
 
-    def get_sli_manifest_part(self):
-        part = {"columnName": self.name,
-                "mode": "FULL",
-                }
-        if self.referenceKey:
-            part["referenceKey"] = 1
-        if self.format:
-            part['constraints'] = {'date': self.format}
-        try:
-            part['populates'] = self.populates()
-        except NotImplementedError:
-            pass
-        return part
-
-    def populates(self):
-        raise NotImplementedError
-
 
 class Attribute(Column):
 
@@ -82,8 +65,6 @@ class Attribute(Column):
             maql.append('')
         return '\n'.join(maql)
 
-    def populates(self):
-        return ["label.%s.%s" % (self.schema_name, self.name)]
 
 class ConnectionPoint(Attribute):
 
@@ -118,8 +99,6 @@ class Fact(Column):
             maql.append('')
         return '\n'.join(maql)
 
-    def populates(self):
-        return ["fact.%s.%s" % (self.schema_name, self.name)]
 
 class Date(Column):
 
@@ -152,8 +131,6 @@ class Date(Column):
                         % (self.schemaReference, self.schema_name, self.name))
         return '\n'.join(maql)
 
-    def populates(self):
-        return ["%s.date.mdyy" % self.schemaReference]
 
 class Reference(Column):
 
@@ -167,9 +144,6 @@ class Reference(Column):
                     % (self.schemaReference, self.reference, self.schema_name,
                        self.name))
         return '\n'.join(maql)
-
-    def populates(self):
-        return ["label.%s.%s" % (self.schemaReference, self.reference)]
 
 
 class Label(Column):
@@ -191,23 +165,3 @@ class Label(Column):
         return 'ALTER ATTRIBUTE  {attr.%s.%s} DEFAULT LABEL {label.%s.%s.%s};'\
                 % (self.schema_name, self.reference, self.schema_name,
                    self.reference, self.name)
-
-    def populates(self):
-        return ["label.%s.%s.%s" % (self.schema_name, self.reference, self.name)]
-
-
-# TODO: create proper columns with utilizing get_sli_manifest_part method
-def get_date_dt_column(column, schema_name):
-    name = '%s_dt' % column.name
-    populates = 'dt.%s.%s' % (to_identifier(schema_name), column.name)
-    return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
-
-def get_time_tm_column(column, schema_name):
-    name = '%s_tm' % column.name
-    populates = 'tm.dt.%s.%s' % (to_identifier(schema_name), column.name)
-    return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
-
-def get_tm_time_id_column(column, schema_name):
-    name = 'tm_%s_id' % column.name
-    populates = 'label.time.second.of.day.%s' % column.schemaReference
-    return {'populates': [populates], 'columnName': name, 'mode': 'FULL', 'referenceKey': 1}
