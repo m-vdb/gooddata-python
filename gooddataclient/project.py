@@ -5,7 +5,7 @@ import logging
 from requests.exceptions import HTTPError
 
 from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
-                                      ProjectNotFoundError, MaqlExecutionFailed,
+                                      ProjectNotFoundError, MaqlExecutionFailed, \
                                       get_api_msg
 
 logger = logging.getLogger("gooddataclient")
@@ -41,7 +41,7 @@ class Project(object):
             if link['title'] == name:
                 logger.debug('Retrieved Project identifier for %s: %s' % (name, link['identifier']))
                 return link['identifier']
-        err_json {
+        err_json = {
             'links': data['about']['links'],
             'project_name': name,
         }
