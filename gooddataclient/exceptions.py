@@ -33,5 +33,9 @@ class MaqlExecutionFailed(GoodDataClientError):
     pass
 
 
+class GetSLIManifestFailed(GoodDataClientError):
+    pass
+
+
 def get_api_msg(err_json):
     return err_json['message'] % tuple(err_json['parameters'])
