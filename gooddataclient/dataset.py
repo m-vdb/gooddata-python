@@ -5,8 +5,7 @@ import inspect
 from gooddataclient.exceptions import DataSetNotFoundError
 from gooddataclient import text
 from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
-    Label, Reference, Fact, get_date_dt_column, get_time_tm_column,\
-    get_tm_time_id_column
+                                   Label, Reference, Fact
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
 
@@ -108,31 +107,18 @@ class Dataset(object):
                         fact_folders.append((column.folder, column.folder_title))
         return attribute_folders, fact_folders
 
-
     def get_sli_manifest(self):
-        '''Create JSON manifest from columns in schema.
-        
-        See populateColumnsFromSchema in AbstractConnector.java
-        '''
-        parts = []
-        for column in self.get_columns():
-            # special additional column for date
-            if isinstance(column, Date):
-                parts.append(get_date_dt_column(column, self.schema_name))
-                if column.datetime:
-                    parts.append(get_time_tm_column(column, self.schema_name))
-                    parts.append(get_tm_time_id_column(column, self.schema_name))
-
-            parts.append(column.get_sli_manifest_part())
-
-        return {"dataSetSLIManifest": {"parts": parts,
-                                       "file": CSV_DATA_FILENAME,
-                                       "dataSet": 'dataset.%s' % to_identifier(self.schema_name),
-                                       "csvParams": {"quoteChar": '"',
-                                                     "escapeChar": '"',
-                                                     "separatorChar": ",",
-                                                     "endOfLine": "\n"
-                                                     }}}
+        """
+        Get the SLI manifest from API entry point.
+        """
+        sli_manifest = self.project.get_sli_manifest(self.name)
+        sli_manifest['dataSetSLIManifest']["csvParams"] = {
+            "quoteChar": '"',
+            "escapeChar": '"',
+            "separatorChar": ",",
+            "endOfLine": "\n"
+        }
+        return sli_manifest
 
     def get_maql(self):
         maql = []
