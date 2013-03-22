@@ -124,51 +124,47 @@ class Dataset(object):
         maql = []
 
         maql.append("""
-# THIS IS MAQL SCRIPT THAT GENERATES PROJECT LOGICAL MODEL.
-# SEE THE MAQL DOCUMENTATION AT http://developer.gooddata.com/api/maql-ddl.html FOR MORE DETAILS
-
 # CREATE DATASET. DATASET GROUPS ALL FOLLOWING LOGICAL MODEL ELEMENTS TOGETHER.
 CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
 """ % (to_identifier(self.schema_name), to_title(self.schema_name)))
 
+        # create the folders if needed
         attribute_folders, fact_folders = self.get_folders()
         if attribute_folders or fact_folders:
             maql.append('# CREATE THE FOLDERS THAT GROUP ATTRIBUTES AND FACTS')
             for folder, folder_title in attribute_folders:
-                maql.append('CREATE FOLDER {dim.%s} VISUAL(TITLE "%s") TYPE ATTRIBUTE;'
+                maql.append('CREATE FOLDER {folder.%s.attr} VISUAL(TITLE "%s") TYPE ATTRIBUTE;'
                             % (folder, folder_title))
             maql.append('')
             for folder, folder_title in fact_folders:
-                maql.append('CREATE FOLDER {ffld.%s} VISUAL(TITLE "%s") TYPE FACT;'
+                maql.append('CREATE FOLDER {folder.%s.fact} VISUAL(TITLE "%s") TYPE FACT;'
                             % (folder, folder_title))
             maql.append('')
 
-        maql.append('# CREATE ATTRIBUTES.\n# ATTRIBUTES ARE CATEGORIES THAT ARE USED FOR SLICING AND DICING THE NUMBERS (FACTS)')
-
         column_list = self.get_columns()
 
+        # Append the attributes, ConnectionPoint, and Date that doesn't have schemaReference
+        maql.append('# CREATE ATTRIBUTES.')
         for column in column_list:
             if isinstance(column, (Attribute, ConnectionPoint))\
                 or (isinstance(column, Date) and not column.schemaReference):
                 maql.append(column.get_maql())
 
-        maql.append('# CREATE FACTS\n# FACTS ARE NUMBERS THAT ARE AGGREGATED BY ATTRIBUTES.')
+        # Append the facts and date facts
+        maql.append('# CREATE FACTS AND DATE FACTS')
         for column in column_list:
             if isinstance(column, Fact):
                 maql.append(column.get_maql())
 
-        maql.append('# CREATE DATE FACTS\n# DATES ARE REPRESENTED AS FACTS\n# DATES ARE ALSO CONNECTED TO THE DATE DIMENSIONS')
-        for column in column_list:
-            if isinstance(column, Date) and column.schemaReference:
-                maql.append(column.get_maql())
-
-        maql.append('# CREATE REFERENCES\n# REFERENCES CONNECT THE DATASET TO OTHER DATASETS')
+        # Append the references
+        maql.append('# CREATE REFERENCES')
         for column in column_list:
             if isinstance(column, Reference):
                 maql.append(column.get_maql())
 
+        # Append the labels and set a default one
+        default_set = False
         for column in column_list:
-            default_set = False
             if isinstance(column, Label):
                 maql.append(column.get_maql())
                 if not default_set:
