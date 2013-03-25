@@ -271,7 +271,7 @@ class Time(Fact):
 
         # connect the time attribute to the date dimension
         maql.append('# CONNECT THE TIME TO THE TIME DIMENSION')
-        maql.append('ALTER ATTRIBUTE {attr.time.second.of.day.%(schema_reference)s} ADD KEYS {f_%(dataset)s.tm_%(name)s_id};\n'
+        maql.append('ALTER ATTRIBUTE {attr.time.second.of.day.%(schema_ref)s} ADD KEYS {f_%(dataset)s.tm_%(name)s_id};\n'
                     % {
                         'schema_ref': self.schemaReference,
                         'dataset': self.schema_name,
