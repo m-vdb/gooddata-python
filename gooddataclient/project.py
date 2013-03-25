@@ -168,7 +168,7 @@ class Project(object):
         ErrorClass, with an extra information defined by `err_json`.
         """
         while True:
-            status = self.connection.get(uri=uri).json()
+            status = response = self.connection.get(uri=uri).json()
 
             for field in status_field.split('.'):
                 status = status[field]
