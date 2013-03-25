@@ -3,7 +3,7 @@ from gooddataclient import columns
 
 class Department(Dataset):
 
-    department = columns.Attribute(title='Department', folder='Department')
+    department = columns.ConnectionPoint(title='Department', folder='Department')
     name = columns.Label(title='Name', reference='department', folder='Department')
 
     def data(self):

@@ -1,34 +1,34 @@
 from gooddataclient.dataset import Dataset
 from gooddataclient.columns import ConnectionPoint, Label, Reference
 
-class Employee(Dataset):
+class Worker(Dataset):
 
-    employee = ConnectionPoint(title='Employee', folder='Employee')
-    firstname = Label(title='First Name', reference='employee', folder='Employee')
-    lastname = Label(title='Last Name', reference='employee', folder='Employee')
-    department = Reference(title='Department', reference='department', schemaReference='Department', folder='Employee')
+    worker = ConnectionPoint(title='Worker', folder='Worker')
+    firstname = Label(title='First Name', reference='worker', folder='Worker')
+    lastname = Label(title='Last Name', reference='worker', folder='Worker')
+    department = Reference(title='Department', reference='department', schemaReference='Department', folder='Worker')
 
     class Meta(Dataset.Meta):
-        column_order = ('employee', 'firstname', 'lastname', 'department')
+        column_order = ('worker', 'firstname', 'lastname', 'department')
 
 
     def data(self):
-        return [{'employee': 'e1', 'lastname': 'Nowmer', 'department': 'd1', 'firstname': 'Sheri'},
-             {'employee': 'e2', 'lastname': 'Whelply', 'department': 'd1', 'firstname': 'Derrick'},
-             {'employee': 'e6', 'lastname': 'Damstra', 'department': 'd2', 'firstname': 'Roberta'},
-             {'employee': 'e7', 'lastname': 'Kanagaki', 'department': 'd3', 'firstname': 'Rebecca'},
-             {'employee': 'e8', 'lastname': 'Brunner', 'department': 'd11', 'firstname': 'Kim'},
-             {'employee': 'e9', 'lastname': 'Blumberg', 'department': 'd11', 'firstname': 'Brenda'},
-             {'employee': 'e10', 'lastname': 'Stanz', 'department': 'd5', 'firstname': 'Darren'},
-             {'employee': 'e11', 'lastname': 'Murraiin', 'department': 'd11', 'firstname': 'Jonathan'},
-             {'employee': 'e12', 'lastname': 'Creek', 'department': 'd11', 'firstname': 'Jewel'},
-             {'employee': 'e13', 'lastname': 'Medina', 'department': 'd11', 'firstname': 'Peggy'},
-             {'employee': 'e14', 'lastname': 'Rutledge', 'department': 'd11', 'firstname': 'Bryan'},
-             {'employee': 'e15', 'lastname': 'Cavestany', 'department': 'd11', 'firstname': 'Walter'},
-             {'employee': 'e16', 'lastname': 'Planck', 'department': 'd11', 'firstname': 'Peggy'},
-             {'employee': 'e17', 'lastname': 'Marshall', 'department': 'd11', 'firstname': 'Brenda'},
-             {'employee': 'e18', 'lastname': 'Wolter', 'department': 'd11', 'firstname': 'Daniel'},
-             {'employee': 'e19', 'lastname': 'Collins', 'department': 'd11', 'firstname': 'Dianne'}
+        return [{'worker': 'e1', 'lastname': 'Nowmer', 'department': 'd1', 'firstname': 'Sheri'},
+             {'worker': 'e2', 'lastname': 'Whelply', 'department': 'd1', 'firstname': 'Derrick'},
+             {'worker': 'e6', 'lastname': 'Damstra', 'department': 'd2', 'firstname': 'Roberta'},
+             {'worker': 'e7', 'lastname': 'Kanagaki', 'department': 'd3', 'firstname': 'Rebecca'},
+             {'worker': 'e8', 'lastname': 'Brunner', 'department': 'd11', 'firstname': 'Kim'},
+             {'worker': 'e9', 'lastname': 'Blumberg', 'department': 'd11', 'firstname': 'Brenda'},
+             {'worker': 'e10', 'lastname': 'Stanz', 'department': 'd5', 'firstname': 'Darren'},
+             {'worker': 'e11', 'lastname': 'Murraiin', 'department': 'd11', 'firstname': 'Jonathan'},
+             {'worker': 'e12', 'lastname': 'Creek', 'department': 'd11', 'firstname': 'Jewel'},
+             {'worker': 'e13', 'lastname': 'Medina', 'department': 'd11', 'firstname': 'Peggy'},
+             {'worker': 'e14', 'lastname': 'Rutledge', 'department': 'd11', 'firstname': 'Bryan'},
+             {'worker': 'e15', 'lastname': 'Cavestany', 'department': 'd11', 'firstname': 'Walter'},
+             {'worker': 'e16', 'lastname': 'Planck', 'department': 'd11', 'firstname': 'Peggy'},
+             {'worker': 'e17', 'lastname': 'Marshall', 'department': 'd11', 'firstname': 'Brenda'},
+             {'worker': 'e18', 'lastname': 'Wolter', 'department': 'd11', 'firstname': 'Daniel'},
+             {'worker': 'e19', 'lastname': 'Collins', 'department': 'd11', 'firstname': 'Dianne'}
              ]
 
 
@@ -37,16 +37,16 @@ maql = """
 # SEE THE MAQL DOCUMENTATION AT http://developer.gooddata.com/api/maql-ddl.html FOR MORE DETAILS
 
 # CREATE DATASET. DATASET GROUPS ALL FOLLOWING LOGICAL MODEL ELEMENTS TOGETHER.
-CREATE DATASET {dataset.employee} VISUAL(TITLE "Employee");
+CREATE DATASET {dataset.worker} VISUAL(TITLE "Worker");
 
 # CREATE THE FOLDERS THAT GROUP ATTRIBUTES AND FACTS
-CREATE FOLDER {dim.employee} VISUAL(TITLE "Employee") TYPE ATTRIBUTE;
+CREATE FOLDER {dim.worker} VISUAL(TITLE "Worker") TYPE ATTRIBUTE;
 
 
 # CREATE ATTRIBUTES.
 # ATTRIBUTES ARE CATEGORIES THAT ARE USED FOR SLICING AND DICING THE NUMBERS (FACTS)
-CREATE ATTRIBUTE {attr.employee.employee} VISUAL(TITLE "Employee", FOLDER {dim.employee}) AS KEYS {f_employee.id} FULLSET;
-ALTER DATASET {dataset.employee} ADD {attr.employee.employee};
+CREATE ATTRIBUTE {attr.worker.worker} VISUAL(TITLE "Worker", FOLDER {dim.worker}) AS KEYS {f_worker.id} FULLSET;
+ALTER DATASET {dataset.worker} ADD {attr.worker.worker};
 
 # CREATE FACTS
 # FACTS ARE NUMBERS THAT ARE AGGREGATED BY ATTRIBUTES.
@@ -56,43 +56,43 @@ ALTER DATASET {dataset.employee} ADD {attr.employee.employee};
 # CREATE REFERENCES
 # REFERENCES CONNECT THE DATASET TO OTHER DATASETS
 # CONNECT THE REFERENCE TO THE APPROPRIATE DIMENSION
-ALTER ATTRIBUTE {attr.department.department} ADD KEYS {f_employee.department_id};
+ALTER ATTRIBUTE {attr.department.department} ADD KEYS {f_worker.department_id};
 
 # ADD LABELS TO ATTRIBUTES
-ALTER ATTRIBUTE {attr.employee.employee} ADD LABELS {label.employee.employee.firstname} VISUAL(TITLE "First Name") AS {f_employee.nm_firstname};
+ALTER ATTRIBUTE {attr.worker.worker} ADD LABELS {label.worker.worker.firstname} VISUAL(TITLE "First Name") AS {f_worker.nm_firstname};
 
-ALTER ATTRIBUTE  {attr.employee.employee} DEFAULT LABEL {label.employee.employee.firstname};
+ALTER ATTRIBUTE  {attr.worker.worker} DEFAULT LABEL {label.worker.worker.firstname};
 # ADD LABELS TO ATTRIBUTES
-ALTER ATTRIBUTE {attr.employee.employee} ADD LABELS {label.employee.employee.lastname} VISUAL(TITLE "Last Name") AS {f_employee.nm_lastname};
+ALTER ATTRIBUTE {attr.worker.worker} ADD LABELS {label.worker.worker.lastname} VISUAL(TITLE "Last Name") AS {f_worker.nm_lastname};
 
-ALTER ATTRIBUTE {attr.employee.employee} ADD LABELS {label.employee.employee} VISUAL(TITLE "Employee") AS {f_employee.nm_employee};
+ALTER ATTRIBUTE {attr.worker.worker} ADD LABELS {label.worker.worker} VISUAL(TITLE "Worker") AS {f_worker.nm_worker};
 # SYNCHRONIZE THE STORAGE AND DATA LOADING INTERFACES WITH THE NEW LOGICAL MODEL
-SYNCHRONIZE {dataset.employee};
+SYNCHRONIZE {dataset.worker};
 """
 
 schema_xml = '''
 <schema>
-  <name>Employee</name>
+  <name>Worker</name>
   <columns>
     <column>
-      <name>employee</name>
-      <title>Employee</title>
+      <name>worker</name>
+      <title>Worker</title>
       <ldmType>CONNECTION_POINT</ldmType>
-      <folder>Employee</folder>
+      <folder>Worker</folder>
     </column>
     <column>
       <name>firstname</name>
       <title>First Name</title>
       <ldmType>LABEL</ldmType>
-      <reference>employee</reference>
-      <folder>Employee</folder>
+      <reference>worker</reference>
+      <folder>Worker</folder>
     </column>
     <column>
       <name>lastname</name>
       <title>Last Name</title>
       <ldmType>LABEL</ldmType>
-      <reference>employee</reference>
-      <folder>Employee</folder>
+      <reference>worker</reference>
+      <folder>Worker</folder>
     </column>
     <column>
       <name>department</name>
@@ -100,13 +100,13 @@ schema_xml = '''
       <ldmType>REFERENCE</ldmType>
       <reference>department</reference>
       <schemaReference>Department</schemaReference>
-      <folder>Employee</folder>
+      <folder>Worker</folder>
     </column>
   </columns>
 </schema>
 '''
 
-data_csv = '''"employee","firstname","lastname","department"
+data_csv = '''"worker","firstname","lastname","department"
 "e1","Sheri","Nowmer","d1"
 "e2","Derrick","Whelply","d1"
 "e6","Roberta","Damstra","d2"
@@ -128,20 +128,20 @@ data_csv = '''"employee","firstname","lastname","department"
 sli_manifest = {"dataSetSLIManifest": {
   "parts":   [
         {
-      "columnName": "employee",
+      "columnName": "worker",
       "mode": "FULL",
-      "populates": ["label.employee.employee"],
+      "populates": ["label.worker.worker"],
       "referenceKey": 1
     },
         {
       "columnName": "firstname",
       "mode": "FULL",
-      "populates": ["label.employee.employee.firstname"]
+      "populates": ["label.worker.worker.firstname"]
     },
         {
       "columnName": "lastname",
       "mode": "FULL",
-      "populates": ["label.employee.employee.lastname"]
+      "populates": ["label.worker.worker.lastname"]
     },
         {
       "columnName": "department",
@@ -151,7 +151,7 @@ sli_manifest = {"dataSetSLIManifest": {
     }
   ],
   "file": "data.csv",
-  "dataSet": "dataset.employee",
+  "dataSet": "dataset.worker",
   "csvParams":   {
     "quoteChar": "\"",
     "escapeChar": "\"",
