@@ -67,7 +67,7 @@ ALTER ATTRIBUTE {payment.date} ADD KEYS {f_salary.dt_payday_id};
 # CREATE REFERENCES
 # REFERENCES CONNECT THE DATASET TO OTHER DATASETS
 # CONNECT THE REFERENCE TO THE APPROPRIATE DIMENSION
-ALTER ATTRIBUTE {attr.employee.employee} ADD KEYS {f_salary.employee_id};
+ALTER ATTRIBUTE {attr.worker.worker} ADD KEYS {f_salary.worker_id};
 
 ALTER ATTRIBUTE {attr.salary.salary} ADD LABELS {label.salary.salary} VISUAL(TITLE "Salary") AS {f_salary.nm_salary};
 # SYNCHRONIZE THE STORAGE AND DATA LOADING INTERFACES WITH THE NEW LOGICAL MODEL
@@ -85,11 +85,11 @@ schema_xml = '''
       <folder>Salary</folder>
     </column>
     <column>
-      <name>employee</name>
-      <title>Employee</title>
+      <name>worker</name>
+      <title>Worker</title>
       <ldmType>REFERENCE</ldmType>
-      <reference>employee</reference>
-      <schemaReference>Employee</schemaReference>
+      <reference>worker</reference>
+      <schemaReference>Worker</schemaReference>
       <folder>Salary</folder>
     </column>
     <column>
@@ -110,7 +110,7 @@ schema_xml = '''
 </schema>
 '''
 
-data_csv = '''"salary","employee","payment","payday","payday_dt"
+data_csv = '''"salary","worker","payment","payday","payday_dt"
 "s1","e1","10230","2006-01-01","38717"
 "s2","e2","4810","2006-01-01","38717"
 "s3","e6","6080","2006-01-01","38717"
@@ -140,9 +140,9 @@ sli_manifest = {"dataSetSLIManifest": {
       "referenceKey": 1
     },
         {
-      "columnName": "employee",
+      "columnName": "worker",
       "mode": "FULL",
-      "populates": ["label.employee.employee"],
+      "populates": ["label.worker.worker"],
       "referenceKey": 1
     },
         {
