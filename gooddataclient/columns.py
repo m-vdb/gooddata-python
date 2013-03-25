@@ -5,6 +5,7 @@ class Column(object):
 
     ldmType = None
     IDENTIFIER = ''
+    referenceKey = False
 
     def __init__(self, title, folder=None, reference=None,
                  schemaReference=None, dataType=None, datetime=False, format=None):
@@ -35,11 +36,38 @@ class Column(object):
             'name': self.name,
         }
 
+    def get_sli_manifest_part(self):
+        part = {"columnName": self.name,
+                "mode": "FULL",
+                }
+        if self.referenceKey:
+            part["referenceKey"] = 1
+        if self.format:
+            part['constraints'] = {'date': self.format}
+        try:
+            part['populates'] = self.populates()
+        except NotImplementedError:
+            pass
+        return [part]
+
+    def populates(self):
+        raise NotImplementedError
+
+    def set_name_and_schema(self, name, schema_name):
+        """
+        This function can be seen as a hook, particularly
+        useful for Date column, which needs to give the
+        column name to its eventual subcolumn (time)
+        """
+        self.name = name
+        self.schema_name = schema_name
+
 
 class Attribute(Column):
 
     ldmType = 'ATTRIBUTE'
     IDENTIFIER = 'd_%(dataset)s_%(name)s.nm_%(name)s'
+    referenceKey = True
 
     def get_maql(self):
         maql = []
@@ -75,6 +103,9 @@ class Attribute(Column):
         if self.folder:
             return ', FOLDER {folder.%s.attr}' % self.folder
         return ''
+
+    def populates(self):
+        return ["label.%s.%s" % (self.schema_name, self.name)]
 
 
 class ConnectionPoint(Attribute):
@@ -152,10 +183,19 @@ class Fact(Column):
             return ', FOLDER {folder.%s.fact}' % self.folder
         return ''
 
+    def populates(self):
+        return ["fact.%s.%s" % (self.schema_name, self.name)]
+
 
 class Date(Fact):
 
     ldmType = 'DATE'
+    referenceKey = True
+
+    def __init__(self, **kwargs):
+        super(Date, self).__init__(**kwargs)
+        if self.datetime:
+            self.time = Time(**kwargs)
 
     def get_maql(self):
         maql = []
@@ -185,6 +225,28 @@ class Date(Fact):
         if self.datetime:
             maql = maql + self.time.get_maql()
         return '\n'.join(maql)
+
+    def populates(self):
+        return ["%s.date.mdyy" % self.schemaReference]
+
+    def get_date_dt_column(self):
+         name = '%s_dt' % self.name
+         populates = 'dt.%s.%s' % (to_identifier(self.schema_name), self.name)
+         return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
+
+    def get_sli_manifest_part(self):
+        parts = super(Date, self).get_sli_manifest_part()
+        parts.append(self.get_date_dt_column())
+        
+        if self.datetime:
+            parts.extend(self.time.get_sli_manifest_part())
+        
+        return parts
+
+    def set_name_and_schema(self, name, schema_name):
+        super(Date, self).set_name_and_schema(name, schema_name)
+        if self.datetime:
+            self.time.set_name_and_schema(name, schema_name)
 
 
 class Time(Fact):
@@ -216,11 +278,26 @@ class Time(Fact):
                         'name': self.name
                     })
         return maql
+    
+    def get_time_tm_column(self):
+        name = '%s_tm' % self.name
+        populates = 'tm.dt.%s.%s' % (to_identifier(self.schema_name), self.name)
+        return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
+
+    def get_tm_time_id_column(self):
+        name = 'tm_%s_id' % self.name
+        populates = 'label.time.second.of.day.%s' % self.schemaReference
+        return {'populates': [populates], 'columnName': name, 'mode': 'FULL', 'referenceKey': 1}
+
+    def get_sli_manifest_part(self):
+        return list((self.get_time_tm_column(), self.get_tm_time_id_column()))
+
 
 class Reference(Column):
 
     ldmType = 'REFERENCE'
     IDENTIFIER = 'f_%(dataset)s.%(name)s_id'
+    referenceKey = True
 
     def get_maql(self):
         maql = []
@@ -234,6 +311,9 @@ class Reference(Column):
                         'identifier': self.identifier,
                     })
         return '\n'.join(maql)
+
+    def populates(self):
+        return ["label.%s.%s" % (self.schemaReference, self.reference)]
 
 
 class Label(Column):
@@ -272,3 +352,24 @@ class Label(Column):
         a SLI manifest.
         """
         return ldm_str.split('.')[2]
+
+    def populates(self):
+        return ["label.%s.%s.%s" % (self.schema_name, self.reference, self.name)]
+
+
+# TODO: create proper columns with utilizing get_sli_manifest_part method
+def get_date_dt_column(column, schema_name):
+    name = '%s_dt' % column.name
+    populates = 'dt.%s.%s' % (to_identifier(schema_name), column.name)
+    return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
+
+def get_time_tm_column(column, schema_name):
+    name = '%s_tm' % column.name
+    populates = 'tm.dt.%s.%s' % (to_identifier(schema_name), column.name)
+    return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
+
+def get_tm_time_id_column(column, schema_name):
+    name = 'tm_%s_id' % column.name
+    populates = 'label.time.second.of.day.%s' % column.schemaReference
+    return {'populates': [populates], 'columnName': name, 'mode': 'FULL', 'referenceKey': 1}
+

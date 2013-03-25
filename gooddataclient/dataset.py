@@ -5,7 +5,8 @@ import inspect
 from gooddataclient.exceptions import DataSetNotFoundError
 from gooddataclient import text
 from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
-                                   Label, Reference, Fact
+                                   Label, Reference, Fact, get_date_dt_column, \
+                                   get_time_tm_column, get_tm_time_id_column
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
 
@@ -47,8 +48,7 @@ class Dataset(object):
     def get_columns(self):
         columns = []
         for name, column in self.get_class_members():
-            column.name = to_identifier(name)
-            column.schema_name = to_identifier(self.schema_name)
+            column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
             columns.append(column)
         return columns
 
@@ -108,17 +108,22 @@ class Dataset(object):
         return attribute_folders, fact_folders
 
     def get_sli_manifest(self):
-        """
-        Get the SLI manifest from API entry point.
-        """
-        sli_manifest = self.project.get_sli_manifest(self.name)
-        sli_manifest['dataSetSLIManifest']["csvParams"] = {
-            "quoteChar": '"',
-            "escapeChar": '"',
-            "separatorChar": ",",
-            "endOfLine": "\n"
-        }
-        return sli_manifest
+        '''Create JSON manifest from columns in schema.
+        
+        See populateColumnsFromSchema in AbstractConnector.java
+        '''
+        parts = []
+        for column in self.get_columns():
+            parts.extend(column.get_sli_manifest_part())
+
+        return {"dataSetSLIManifest": {"parts": parts,
+                                       "file": CSV_DATA_FILENAME,
+                                       "dataSet": 'dataset.%s' % to_identifier(self.schema_name),
+                                       "csvParams": {"quoteChar": '"',
+                                                     "escapeChar": '"',
+                                                     "separatorChar": ",",
+                                                     "endOfLine": "\n"
+                                                     }}}
 
     def get_maql(self):
         maql = []
@@ -237,4 +242,3 @@ class DateDimension(object):
         dir_name = self.connection.webdav.upload(data, sli_manifest)
         self.project.integrate_uploaded_data(dir_name, wait_for_finish=True)
         self.connection.webdav.delete(dir_name)
-
