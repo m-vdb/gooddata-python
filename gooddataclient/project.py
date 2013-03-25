@@ -24,7 +24,7 @@ def delete_projects_by_name(connection, name):
 class Project(object):
 
     PROJECTS_URI = '/gdc/projects'
-    MAQL_EXEC_URI = '/gdc/md/%s/ldm/manage'
+    MAQL_EXEC_URI = '/gdc/md/%s/ldm/manage2'
     MAQL_VALID_URI = '/gdc/md/%s/maqlvalidator'
     PULL_URI = '/gdc/md/%s/etl/pull'
 
@@ -116,16 +116,13 @@ class Project(object):
                 err_msg = 'MAQL queries did not validate'
                 raise MaqlValidationFailed(err_msg, content)
 
-    def execute_maql(self, maql):
+    def execute_maql(self, maql, wait_for_finish=True):
         self.validate_maql(maql)
 
         data = {'manage': {'maql': maql}}
         try:
             response = self.connection.post(uri=self.MAQL_EXEC_URI % self.id, data=data)
             response.raise_for_status()
-
-            if len(response.json()['uris']) == 0:
-                raise MaqlExecutionFailed('Length of `uris` array should not be 0', response.json())
         except HTTPError, err:
             err_json = err.response.json()['error']
             err_json.update({
@@ -133,9 +130,13 @@ class Project(object):
                 'maql': maql,
             })
 
-            # FIXME : this should be removed when using ldm/manage2
-            if err.response.status_code != 504:
-                raise MaqlExecutionFailed(get_api_msg(err_json),err_json)
+            raise MaqlExecutionFailed(get_api_msg(err_json),err_json)
+        # It seems the API can retrieve several links
+        task_uris = [entry['link'] for entry in response.json()['entries']]
+
+        if wait_for_finish:
+            for task_uri in task_uris:
+                self.poll(task_uri, 'wTaskStatus.status', MaqlExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         try:
@@ -154,13 +155,27 @@ class Project(object):
                 err_json['dir_name'] = dir_name
                 raise UploadFailed(get_api_msg(err_json), err_json)
         task_uri = response.json()['pullTask']['uri']
-        # checkLoadingStatus in AbstractConnector.java
+
         if wait_for_finish:
-            while True:
-                status = self.connection.get(uri=task_uri).json()['taskStatus']
-                logger.debug(status)
-                if status == 'OK':
-                    break
-                if status in ('ERROR', 'WARNING'):
-                    raise UploadFailed('Failed with status: %s' % status, {'dir_name': dir_name})
-                time.sleep(0.5)
+            self.poll(task_uri, 'taskStatus', UploadFailed, {'dir_name': dir_name})
+
+    def poll(self, uri, status_field, ErrorClass, err_json=None):
+        """
+        This function is useful to poll a given uri. It looks
+        at the `status_field` to know the status of the task.
+
+        In case of failure, it will raise an error of the type
+        ErrorClass, with an extra information defined by `err_json`.
+        """
+        while True:
+            status = self.connection.get(uri=uri).json()
+
+            for field in status_field.split('.'):
+                status = status[field]
+            logger.debug(status)
+            if status == 'OK':
+                break
+            if status in ('ERROR', 'WARNING'):
+                err_json = response.update(err_json) if err_json else response
+                raise ErrorClass('Failed with status: %s' % status, err_json)
+            time.sleep(0.5)
