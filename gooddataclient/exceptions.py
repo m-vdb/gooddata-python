@@ -33,6 +33,10 @@ class MaqlExecutionFailed(GoodDataClientError):
     pass
 
 
+class MaqlValidationFailed(GoodDataClientError):
+    pass
+
+
 class GetSLIManifestFailed(GoodDataClientError):
     pass
 
