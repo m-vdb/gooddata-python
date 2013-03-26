@@ -3,6 +3,7 @@ import unittest
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
 from gooddataclient.dataset import DateDimension
+from gooddataclient.exceptions import MaqlValidationFailed
 
 from tests.credentials import password, username, project_id
 from tests.test_project import TEST_PROJECT_NAME
@@ -39,7 +40,7 @@ class TestDataset(unittest.TestCase):
             self.assertEquals('OK', dataset_metadata['lastUpload']['dataUploadShort']['status'])
             # TODO: check different data for the upload
 
-    def test_date_maql(self):
+    def test_date_dimension(self):
         date_dimension = DateDimension(self.project)
         self.assertEquals('INCLUDE TEMPLATE "URN:GOODDATA:DATE"', date_dimension.get_maql())
         self.assertEquals('INCLUDE TEMPLATE "URN:GOODDATA:DATE" MODIFY (IDENTIFIER "test", TITLE "Test");\n\n',
@@ -47,6 +48,9 @@ class TestDataset(unittest.TestCase):
         self.assertEquals(examples.forex.date_dimension_maql, date_dimension.get_maql('Forex', include_time=True))
         self.assertEquals(examples.forex.date_dimension_maql.replace('forex', 'xerof').replace('Forex', 'Xerof'),
                           date_dimension.get_maql('Xerof', include_time=True))
+
+        date_dimension.create(name='testDateDimension')
+        self.assertRaises(MaqlValidationFailed, date_dimension.create, 'testDateDimension')
 
     def test_sli_manifest(self):
         for (example, ExampleDataset) in examples.examples:

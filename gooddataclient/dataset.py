@@ -2,7 +2,9 @@ import os
 import logging
 import inspect
 
-from gooddataclient.exceptions import DataSetNotFoundError
+from requests.exceptions import HTTPError
+
+from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
 from gooddataclient import text
 from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
                                    Label, Reference, Fact, get_date_dt_column, \
@@ -200,6 +202,7 @@ class DateDimension(object):
 
     DATE_MAQL = 'INCLUDE TEMPLATE "URN:GOODDATA:DATE"'
     DATE_MAQL_ID = 'INCLUDE TEMPLATE "URN:GOODDATA:DATE" MODIFY (IDENTIFIER "%s", TITLE "%s");\n\n'
+    DATASETS_URI = '/gdc/md/%s/data/sets'
 
     def __init__(self, project):
         self.project = project
@@ -226,11 +229,42 @@ class DateDimension(object):
         return maql
 
     def create(self, name=None, include_time=False):
-        # TODO: check if not already created, if yes, do nothing
+        """
+        A function to create the date dimension. Before executing the MAQL,
+        it checks if the date dimension already exists.
+        """
+        if name and self.date_exists(name):
+            err_json = {
+                'date_name': name,
+                'include_time': include_time,
+            }
+            err_msg = 'Date dimension already exists : %(date_name)s' % err_json
+            raise MaqlValidationFailed(err_msg, err_json)
+
         self.project.execute_maql(self.get_maql(name, include_time))
         if include_time:
             self.upload_time(name)
         return self
+
+    def date_exists(self, name):
+        """
+        A function to check the existence of a date dimension.
+        It is only call if we want to create the date dimension
+        using a name.
+        """
+        try:
+            response = self.connection.get(self.DATASETS_URI % self.project.id)
+            response.raise_for_status()
+        except HTTPError, err:
+            err_json = {
+                'status_code': err.response.status_code,
+                'reponse': err.response,
+            }
+            err_msg = 'Could not check if date exists: %(status_code)s' % err_json
+            raise MaqlValidationFailed(err_msg, err_json)
+        else:
+            sets = response.json()['dataSetsInfo']['sets']
+            return bool(filter(lambda x: x['meta']['identifier'] == '%s.dataset.dt' % name.lower(), sets))
 
     def upload_time(self, name):
         data = open(os.path.join(os.path.dirname(__file__), 'resources',
