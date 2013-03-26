@@ -41,6 +41,7 @@ class TestProject(unittest.TestCase):
             project = Project(self.connection).create(TEST_PROJECT_NAME)
         else:
             project = Project(self.connection).load(id=project_id)
+
         for (example, ExampleDataset) in examples.examples:
             dataset = ExampleDataset(project)
             self.assertRaises(DataSetNotFoundError, dataset.get_metadata,
@@ -62,6 +63,7 @@ class TestProject(unittest.TestCase):
 
         if not project_id:
             project.delete()
+
 
 if __name__ == '__main__':
     unittest.main()

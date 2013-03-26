@@ -7,8 +7,7 @@ from requests.exceptions import HTTPError
 from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
 from gooddataclient import text
 from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
-                                   Label, Reference, Fact, get_date_dt_column, \
-                                   get_time_tm_column, get_tm_time_id_column
+                                   Label, Reference, Fact
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
 
@@ -185,12 +184,13 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
                 maql.append('# ADD LABEL TO CONNECTION POINT')
                 maql.append(column.get_original_label_maql())
 
-        # TODO: not sure where this came from in Department example, wild guess only!
+        # FIXME : not sure this is useful ?
         if not cp:
             maql.append('CREATE ATTRIBUTE {attr.%s.factsof} VISUAL(TITLE "Records of %s") AS KEYS {f_%s.id} FULLSET;'
                         % (to_identifier(self.schema_name), to_title(self.schema_name), to_identifier(self.schema_name)))
             maql.append('ALTER DATASET {dataset.%s} ADD {attr.%s.factsof};'
                         % (to_identifier(self.schema_name), to_identifier(self.schema_name)))
+
         maql.append("""# SYNCHRONIZE THE STORAGE AND DATA LOADING INTERFACES WITH THE NEW LOGICAL MODEL
 SYNCHRONIZE {dataset.%s};
 """ % to_identifier(self.schema_name))

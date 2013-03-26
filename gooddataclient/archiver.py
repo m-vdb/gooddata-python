@@ -74,26 +74,29 @@ def write_tmp_zipfile(files):
     return filename
 
 def create_archive(data, sli_manifest):
-    '''Zip the data and sli_manifest files to an archive.
+    """
+    Zip the data and sli_manifest files to an archive.
     Remember to os.remove(filename) after use.
 
     @param data: csv data
     @param sli_manifest: json sli_manifest
 
     return the filename to the temporary zip file
-    '''
+    """
     if isinstance(data, list):
         data_path = write_tmp_csv_file(data, sli_manifest)
     else:
         data_path = write_tmp_file(data)
     if isinstance(sli_manifest, dict):
         sli_manifest = json.dumps(sli_manifest)
+
     sli_manifest_path = write_tmp_file(sli_manifest)
     archive = write_tmp_zipfile(((data_path, CSV_DATA_FILENAME),
                                  (sli_manifest_path, DLI_MANIFEST_FILENAME)))
     os.remove(data_path)
     os.remove(sli_manifest_path)
     return archive
+
 
 def csv_to_list(data_csv):
     '''Create list of dicts from CSV string.

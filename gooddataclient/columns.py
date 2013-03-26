@@ -48,6 +48,7 @@ class Column(object):
             part['populates'] = self.populates()
         except NotImplementedError:
             pass
+
         return [part]
 
     def populates(self):
@@ -355,21 +356,3 @@ class Label(Column):
 
     def populates(self):
         return ["label.%s.%s.%s" % (self.schema_name, self.reference, self.name)]
-
-
-# TODO: create proper columns with utilizing get_sli_manifest_part method
-def get_date_dt_column(column, schema_name):
-    name = '%s_dt' % column.name
-    populates = 'dt.%s.%s' % (to_identifier(schema_name), column.name)
-    return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
-
-def get_time_tm_column(column, schema_name):
-    name = '%s_tm' % column.name
-    populates = 'tm.dt.%s.%s' % (to_identifier(schema_name), column.name)
-    return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
-
-def get_tm_time_id_column(column, schema_name):
-    name = 'tm_%s_id' % column.name
-    populates = 'label.time.second.of.day.%s' % column.schemaReference
-    return {'populates': [populates], 'columnName': name, 'mode': 'FULL', 'referenceKey': 1}
-
