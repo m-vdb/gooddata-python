@@ -85,10 +85,13 @@ def create_archive(data, sli_manifest):
 
     return the filename to the temporary zip file
     """
-    if isinstance(data, Iterable):
+    if isinstance(data, str):
+        data_path = write_tmp_file(data)
+    elif isinstance(data, Iterable):
         data_path = write_tmp_csv_file(data, sli_manifest)
     else:
-        data_path = write_tmp_file(data)
+        raise TypeError('Data should either a string or an iterable')
+
     if isinstance(sli_manifest, dict):
         sli_manifest = json.dumps(sli_manifest)
 
