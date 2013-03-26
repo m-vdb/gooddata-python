@@ -5,6 +5,8 @@ from tempfile import mkstemp
 from zipfile import ZipFile
 import datetime
 import hashlib
+from collections import Iterable
+
 
 DLI_MANIFEST_FILENAME = 'upload_info.json'
 CSV_DATA_FILENAME = 'data.csv'
@@ -83,7 +85,7 @@ def create_archive(data, sli_manifest):
 
     return the filename to the temporary zip file
     """
-    if isinstance(data, list):
+    if isinstance(data, Iterable):
         data_path = write_tmp_csv_file(data, sli_manifest)
     else:
         data_path = write_tmp_file(data)
