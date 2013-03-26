@@ -177,5 +177,5 @@ class Project(object):
                 break
             if status in ('ERROR', 'WARNING'):
                 err_json = response.update(err_json) if err_json else response
-                raise ErrorClass('Failed with status: %s' % status, err_json)
+                raise ErrorClass(get_api_msg(err_json), err_json)
             time.sleep(0.5)
