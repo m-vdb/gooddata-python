@@ -331,7 +331,6 @@ class Label(Column):
                         'reference': self.reference,
                         'name': self.name,
                         'title': self.title,
-                        'identifier': self.identifier,
                     })
         # TODO: DATATYPE
         maql.append('')
@@ -345,14 +344,20 @@ class Label(Column):
                     'name': self.name,
                 }
 
-    @classmethod
-    def from_ldm_to_reference(cls, ldm_str):
-        """
-        Parses a string like {label.dataset.reference.name}
-        and return the reference. This is useful when retrieving
-        a SLI manifest.
-        """
-        return ldm_str.split('.')[2]
-
     def populates(self):
         return ["label.%s.%s.%s" % (self.schema_name, self.reference, self.name)]
+
+
+class HyperLink(Label):
+
+    ldmType = 'HYPERLINK'
+
+    def get_maql(self):
+        maql = '\nALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} ALTER LABELS {label.%(dataset)s.%(reference)s.%(name)s} HYPERLINK;'\
+               % {
+                   'dataset': self.schema_name,
+                   'reference': self.reference,
+                   'name': self.name,
+                   'title': self.title,
+               }
+        return super(HyperLink, self).get_maql() + maql
