@@ -130,6 +130,16 @@ class ConnectionPoint(Attribute):
                         'dataset': self.schema_name,
                         'name': self.name,
                     })
+        # change the datatype if needed
+        if self.dataType:
+            data_type = 'VARCHAR(32)' if self.dataType == 'IDENTITY' else self.dataType
+            maql.append('ALTER DATATYPE {%(identifier)s} %(data_type)s;'
+                        % {
+                            'identifier': self.identifier,
+                            'data_type': data_type,
+                        })
+        else:
+            maql.append('')
         return '\n'.join(maql)
 
     def get_original_label_maql(self):
