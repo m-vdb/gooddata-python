@@ -79,7 +79,7 @@ class Connection(object):
         return r
 
     def get_metadata(self):
-        return self.get(self.MD_URI)
+        return self.get(self.MD_URI).json()
 
 
 class Webdav(Connection):
