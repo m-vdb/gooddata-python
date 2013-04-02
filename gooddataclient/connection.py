@@ -53,8 +53,10 @@ class Connection(object):
 
     def get(self, uri):
         logger.debug('GET: %s' % uri)
-        response = requests.get(self.HOST + uri, cookies=self.cookies,
-                                headers=JSON_HEADERS, auth=(self.username, self.password))
+        response = requests.get(self.HOST + uri,
+                                cookies=self.cookies,
+                                headers=JSON_HEADERS,
+                                auth=(self.username, self.password))
         return response
 
     def post(self, uri, data, headers=JSON_HEADERS, login=False):

@@ -90,14 +90,16 @@ def create_archive(data, sli_manifest):
     elif isinstance(data, Iterable):
         data_path = write_tmp_csv_file(data, sli_manifest)
     else:
-        raise TypeError('Data should either a string or an iterable')
+        raise TypeError('Data should be either a string or an iterable')
 
     if isinstance(sli_manifest, dict):
         sli_manifest = json.dumps(sli_manifest)
 
     sli_manifest_path = write_tmp_file(sli_manifest)
-    archive = write_tmp_zipfile(((data_path, CSV_DATA_FILENAME),
-                                 (sli_manifest_path, DLI_MANIFEST_FILENAME)))
+    archive = write_tmp_zipfile((
+        (data_path, CSV_DATA_FILENAME),
+        (sli_manifest_path, DLI_MANIFEST_FILENAME)
+    ))
     os.remove(data_path)
     os.remove(sli_manifest_path)
     return archive
