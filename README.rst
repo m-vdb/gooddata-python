@@ -89,7 +89,19 @@ Features
 Tests
 =====
 Remember to put your username and password to the ``credentials.py`` file. 
-The tests are running directly against a live GoodData API.
+The tests are running directly against a live GoodData API. To do so::
+
+        $ cp tests/credentials.py.tpl tests/credentials.py
+
+You have to provide a user name, a password, and optionally a project id. If you provide
+a project id, the tests won't create a new project but work on the existing project. This might
+be useful if your GoodData account does not provide project creation.
+
+Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this:
+
+        $ python tests/test_connection.py
+
+See the available tests in tests/ directory.
 
 To-do
 =====
