@@ -341,6 +341,7 @@ class Label(Column):
                         'reference': self.reference,
                         'name': self.name,
                         'title': self.title,
+                        'identifier': self.identifier,
                     })
         # TODO: DATATYPE
         maql.append('')
