@@ -5,7 +5,7 @@ from gooddataclient.connection import Connection
 from gooddataclient.dataset import DateDimension
 from gooddataclient.exceptions import MaqlValidationFailed
 
-from tests.credentials import password, username, project_id
+from tests.credentials import password, username, project_id, gd_token
 from tests.test_project import TEST_PROJECT_NAME
 from tests import logger, examples
 
@@ -15,14 +15,14 @@ class TestDataset(unittest.TestCase):
     def setUp(self):
         self.connection = Connection(username, password)
 
-        if not project_id:
+        if gd_token:
             delete_projects_by_name(self.connection, TEST_PROJECT_NAME)
-            self.project = Project(self.connection).create(TEST_PROJECT_NAME)
+            self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
         else:
             self.project = Project(self.connection).load(id=project_id)
 
     def tearDown(self):
-        if not project_id:
+        if gd_token:
             self.project.delete()
 
     def test_create_dataset(self):
