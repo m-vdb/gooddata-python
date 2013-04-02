@@ -1,12 +1,12 @@
 import time
-import urllib2
 import logging
 
 from requests.exceptions import HTTPError
 
 from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
                                       ProjectNotFoundError, MaqlExecutionFailed, \
-                                      get_api_msg, MaqlValidationFailed
+                                      get_api_msg, MaqlValidationFailed, \
+                                      ProjectCreationError
 
 logger = logging.getLogger("gooddataclient")
 
@@ -48,8 +48,7 @@ class Project(object):
         }
         raise ProjectNotFoundError('Failed to retrieve Project identifier for %s' % (name), err_json)
 
-    # TODO cannot test this....
-    def create(self, name, desc=None, template_uri=None):
+    def create(self, name, gd_token, desc=None, template_uri=None):
         """Create a new GoodData project"""
         request_data = {
             'project': {
@@ -59,18 +58,28 @@ class Project(object):
                 },
                 'content': {
                     'guidedNavigation': '1',
+                    'authorizationToken': gd_token,
                 },
             }
         }
         if template_uri:
             request_data['project']['meta']['projectTemplate'] = template_uri
+        try:
+            response = self.connection.post(self.PROJECTS_URI, request_data)
+            response.raise_for_status()
+        except HTTPError, err:
+            err_json = {
+                'name': name,
+                'status_code': err.response.status_code,
+                'response': err.response.content
+            }
+            err_msg = 'Could not create project (%(name)s), status code: %(status_code)s' % err_json
+            raise ProjectCreationError(err_msg, err_json)
+        else:
+            id = response.json()['uri'].split('/')[-1]
+            logger.debug("Created project name=%s with id=%s" % (name, id))
+            return self.load(id=id)
 
-        response = self.connection.post(self.PROJECTS_URI, request_data)
-        id = response['uri'].split('/')[-1]
-        logger.debug("Created project name=%s with id=%s" % (name, id))
-        return self.load(id=id)
-
-    # TODO cannot test this....
     def delete(self):
         """Delete a GoodData project"""
         try:
