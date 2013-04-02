@@ -71,7 +71,7 @@ Working with the project::
 	connection = Connection(username, password)
 	project = Project(connection)
 	project = project.load(name='project_name')
-	project = project.create('project_name')
+	project = project.create('project_name', 'gd_token')
 	project.delete()
 	delete_projects_by_name(connection, 'project_name')
 
@@ -88,14 +88,17 @@ Features
 
 Tests
 =====
-Remember to put your username and password to the ``credentials.py`` file. 
+Remember to provide the ``credentials.py`` file. 
 The tests are running directly against a live GoodData API. To do so::
 
         $ cp tests/credentials.py.tpl tests/credentials.py
 
 You have to provide a user name, a password, and optionally a project id. If you provide
 a project id, the tests won't create a new project but work on the existing project. This might
-be useful if your GoodData account does not provide project creation.
+be useful if your GoodData account does not provide project creation. In the case you have a developper
+token, you can add it to this file (into gd_token parameter). It is needed to create projects. Please
+visit http://developer.gooddata.com/cloudconnect/request-token/. Using a token is preferable for testing,
+so that no conflicts occur with existing configurations.
 
 Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this::
 
