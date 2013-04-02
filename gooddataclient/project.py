@@ -185,6 +185,7 @@ class Project(object):
             if status == 'OK':
                 break
             if status in ('ERROR', 'WARNING'):
-                err_json = response.update(err_json) if err_json else response
+                err_json = err_json or {}
+                err_json.update(response)
                 raise ErrorClass(get_api_msg(err_json), err_json)
             time.sleep(0.5)
