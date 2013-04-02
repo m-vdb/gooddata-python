@@ -97,7 +97,7 @@ You have to provide a user name, a password, and optionally a project id. If you
 a project id, the tests won't create a new project but work on the existing project. This might
 be useful if your GoodData account does not provide project creation.
 
-Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this:
+Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this::
 
         $ python tests/test_connection.py
 
