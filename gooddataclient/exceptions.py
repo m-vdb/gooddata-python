@@ -13,6 +13,10 @@ class AuthenticationError(GoodDataClientError):
     pass
 
 
+class ProjectCreationError(GoodDataClientError):
+    pass
+
+
 class ProjectNotOpenedError(GoodDataClientError):
     pass
 
