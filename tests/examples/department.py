@@ -5,21 +5,22 @@ class Department(Dataset):
 
     department = columns.ConnectionPoint(title='Department', folder='Department')
     name = columns.Label(title='Name', reference='department', folder='Department')
+    city = columns.Attribute(title='City', folder='Department', dataType='VARCHAR(20)')
 
     def data(self):
         #data from django model like Department.object.values('department', 'name')
-        return [{'department': u'd1', 'name': u'HQ General Management'},
-                {'department': u'd2', 'name': u'HQ Information Systems'},
-                {'department': u'd3', 'name': u'HQ Marketing'},
-                {'department': u'd4', 'name': u'HQ Human Resources'},
-                {'department': u'd5', 'name': u'HQ Finance and Accounting'},
-                {'department': u'd11', 'name': u'Store Management'},
-                {'department': u'd14', 'name': u'Store Information Systems'},
-                {'department': u'd15', 'name': u'Store Permanent Checkers'},
-                {'department': u'd16', 'name': u'Store Temporary Checkers'},
-                {'department': u'd17', 'name': u'Store Permanent Stockers'},
-                {'department': u'd18', 'name': u'Store Temporary Stockers'},
-                {'department': u'd19', 'name': u'Store Permanent Butchers'},
+        return [{'department': u'd1', 'name': u'HQ General Management', 'city': 'San Diego'},
+                {'department': u'd2', 'name': u'HQ Information Systems', 'city': 'Denver'},
+                {'department': u'd3', 'name': u'HQ Marketing', 'city': 'Denver'},
+                {'department': u'd4', 'name': u'HQ Human Resources', 'city': 'NYC'},
+                {'department': u'd5', 'name': u'HQ Finance and Accounting', 'city': 'Boston'},
+                {'department': u'd11', 'name': u'Store Management', 'city': 'Salt Lake City'},
+                {'department': u'd14', 'name': u'Store Information Systems', 'city': 'Washington'},
+                {'department': u'd15', 'name': u'Store Permanent Checkers', 'city': 'Houston'},
+                {'department': u'd16', 'name': u'Store Temporary Checkers', 'city': 'Boston'},
+                {'department': u'd17', 'name': u'Store Permanent Stockers', 'city': 'NYC'},
+                {'department': u'd18', 'name': u'Store Temporary Stockers', 'city': 'Washington'},
+                {'department': u'd19', 'name': u'Store Permanent Butchers', 'city': 'NYC'},
                 ]
 
 

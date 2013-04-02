@@ -63,17 +63,17 @@ class Column(object):
         self.name = name
         self.schema_name = schema_name
 
-
+# TODO : merge Attribute and ConnectionPoint asap
 class Attribute(Column):
 
     ldmType = 'ATTRIBUTE'
-    IDENTIFIER = 'd_%(dataset)s_%(name)s.nm_%(name)s'
+    IDENTIFIER = 'f_department.city_id'
     referenceKey = True
 
     def get_maql(self):
         maql = []
         # create the attribute
-        maql.append('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS {%(identifier)s};'
+        maql.append('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS KEYS {d_%(dataset)s_%(name)s.id} FULLSET, {%(identifier)s};'
                     % {
                         'dataset': self.schema_name,
                         'name': self.name,
@@ -95,8 +95,12 @@ class Attribute(Column):
                             'identifier': self.identifier,
                             'data_type': data_type,
                         })
-        else:
-            maql.append('')
+
+        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "City") AS {d_%(dataset)s_%(name)s.nm_%(name)s};'
+                    % {
+                        'dataset': self.schema_name,
+                        'name': self.name,
+                    })
         return '\n'.join(maql)
 
     @property
@@ -131,6 +135,8 @@ class ConnectionPoint(Attribute):
                         'name': self.name,
                     })
         # change the datatype if needed
+
+        #TODO : this will not work
         if self.dataType:
             data_type = 'VARCHAR(32)' if self.dataType == 'IDENTITY' else self.dataType
             maql.append('ALTER DATATYPE {%(identifier)s} %(data_type)s;'

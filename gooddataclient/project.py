@@ -108,6 +108,7 @@ class Project(object):
         if not maql:
             raise AttributeError('MAQL missing, nothing to execute')
         data = {'expression': maql}
+
         try:
             response = self.connection.post(uri=self.MAQL_VALID_URI % self.id, data=data)
             response.raise_for_status()
@@ -187,5 +188,8 @@ class Project(object):
             if status in ('ERROR', 'WARNING'):
                 err_json = err_json or {}
                 err_json.update(response)
-                raise ErrorClass(get_api_msg(err_json), err_json)
+                err_msg = 'An error occured while polling uri %s' % uri
+                import pdb; pdb.set_trace()
+                raise ErrorClass(err_msg, err_json)
+
             time.sleep(0.5)
