@@ -72,7 +72,7 @@ class Dataset(object):
         dataset = self.get_metadata(name)
         return self.connection.delete(uri=dataset['meta']['uri'])
 
-    def data(self):
+    def data(self, *args, **kwargs):
         raise NotImplementedError
 
     def get_date_dimension(self):
@@ -87,12 +87,12 @@ class Dataset(object):
                                                include_time=date_dimension.datetime)
         self.project.execute_maql(self.get_maql())
 
-    def upload(self):
+    def upload(self, *args, **kwargs):
         try:
             self.get_metadata(self.schema_name)
         except DataSetNotFoundError:
             self.create()
-        dir_name = self.connection.webdav.upload(self.data(), self.get_sli_manifest())
+        dir_name = self.connection.webdav.upload(self.data(*args, **kwargs), self.get_sli_manifest())
         self.project.integrate_uploaded_data(dir_name)
         self.connection.webdav.delete(dir_name)
 
