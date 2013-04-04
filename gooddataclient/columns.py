@@ -67,19 +67,18 @@ class Column(object):
 class Attribute(Column):
 
     ldmType = 'ATTRIBUTE'
-    IDENTIFIER = 'f_department.city_id'
+    IDENTIFIER = 'd_%(dataset)s_%(name)s.nm_%(name)s'
     referenceKey = True
 
     def get_maql(self):
         maql = []
         # create the attribute
-        maql.append('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS KEYS {d_%(dataset)s_%(name)s.id} FULLSET, {%(identifier)s};'
+        maql.append('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS KEYS {d_%(dataset)s_%(name)s.id} FULLSET, {f_%(dataset)s.%(name)s_id};'
                     % {
                         'dataset': self.schema_name,
                         'name': self.name,
                         'title': self.title,
                         'folder': self.folder_statement,
-                        'identifier': self.identifier,
                     })
         # add it to the dataset
         maql.append('ALTER DATASET {dataset.%(dataset)s} ADD {attr.%(dataset)s.%(name)s};'
@@ -87,6 +86,14 @@ class Attribute(Column):
                         'dataset': self.schema_name,
                         'name': self.name,
                     })
+
+        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "City") AS {%(identifier)s};'
+                    % {
+                        'dataset': self.schema_name,
+                        'name': self.name,
+                        'identifier': self.identifier,
+                    })
+
         # change the datatype if needed
         if self.dataType:
             data_type = 'VARCHAR(32)' if self.dataType == 'IDENTITY' else self.dataType
@@ -96,11 +103,6 @@ class Attribute(Column):
                             'data_type': data_type,
                         })
 
-        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "City") AS {d_%(dataset)s_%(name)s.nm_%(name)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                    })
         return '\n'.join(maql)
 
     @property
