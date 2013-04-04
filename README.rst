@@ -86,15 +86,19 @@ Features
 * Creating the TimeDimension (MAQL and data)
 * Support for generating MAQL create for Datasets
 
+Developers
+=========
+To install properly the client, after cloning the repo, execute::
+
+        $ make install
+
+This will require pip installed. (see https://pypi.python.org/pypi/pip )
+
 Tests
 =====
-Remember to provide the ``credentials.py`` file. 
-The tests are running directly against a live GoodData API. To do so::
-
-        $ cp tests/credentials.py.tpl tests/credentials.py
-
-You have to provide a user name, a password, and optionally a project id. If you provide
-a project id, the tests won't create a new project but work on the existing project. This might
+The tests are running directly against a live GoodData API.
+You have to provide a user name, a password, and optionally a project id in the ``tests/credentials.py`` file.
+If you provide a project id, the tests won't create a new project but work on the existing project. This might
 be useful if your GoodData account does not provide project creation. In the case you have a developper
 token, you can add it to this file (into gd_token parameter). It is needed to create projects. Please
 visit http://developer.gooddata.com/cloudconnect/request-token/. Using a token is preferable for testing,
@@ -102,9 +106,10 @@ so that no conflicts occur with existing configurations.
 
 Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this::
 
-        $ python tests/test_connection.py
+        $ make test # execute the whole test suite
+        $ make test_connection # execute a particular test
 
-See the available tests in tests/ directory.
+See the available tests in ``tests/`` directory.
 
 To-do
 =====

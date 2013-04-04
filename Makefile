@@ -1,4 +1,12 @@
-TEST_DIR = 'tests/'
+TEST_DIR = tests/
+CREDENTIALS_TPL = tests/credentials.py.tpl
+CREDENTIALS_FILE = tests/credentials.py
+
+install:
+	@echo 'Copying credentials...'
+	@(cp -n ${CREDENTIALS_TPL} ${CREDENTIALS_FILE}) || echo "Credentials file already exists."
+	@echo 'Installing packages...'
+	@(pip install -r requirements.txt)
 
 test: test_archiver test_text test_schema test_connection test_project test_dataset
 
