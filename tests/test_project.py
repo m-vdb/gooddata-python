@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from gooddataclient.connection import Connection
@@ -6,7 +7,7 @@ from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
                                       ProjectNotOpenedError, ProjectNotFoundError
 
 from tests.credentials import password, username, project_id, gd_token
-from tests import examples, logger
+from tests import examples, logger, get_parser
 
 
 TEST_PROJECT_NAME = 'gdc_unittest'
@@ -47,4 +48,7 @@ class TestProject(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    args = get_parser().parse_args()
+    logger.logger.setLevel(args.loglevel)
+    del sys.argv[1:]
     unittest.main()

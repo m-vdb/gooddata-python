@@ -1,3 +1,4 @@
+import sys
 import unittest
 
 from gooddataclient.project import Project, delete_projects_by_name
@@ -7,7 +8,7 @@ from gooddataclient.exceptions import MaqlValidationFailed
 
 from tests.credentials import password, username, project_id, gd_token
 from tests.test_project import TEST_PROJECT_NAME
-from tests import logger, examples
+from tests import logger, examples, get_parser
 
 
 class TestDataset(unittest.TestCase):
@@ -60,4 +61,7 @@ class TestDataset(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    args = get_parser().parse_args()
+    logger.logger.setLevel(args.loglevel)
+    del sys.argv[1:]
     unittest.main()
