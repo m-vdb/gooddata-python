@@ -57,7 +57,10 @@ class Dataset(object):
         return self.connection.get(uri=self.DATASETS_URI % self.project.id)
 
     def get_metadata(self, name):
-        datasets = self.get_datasets_metadata().json()['dataSetsInfo']['sets']
+        try:
+            datasets = self.get_datasets_metadata().json()['dataSetsInfo']['sets']
+        except KeyError:
+            datasets = []
 
         for dataset in datasets:
             if dataset['meta']['title'] == name:
@@ -263,7 +266,10 @@ class DateDimension(object):
             err_msg = 'Could not check if date exists: %(status_code)s' % err_json
             raise MaqlValidationFailed(err_msg, err_json)
         else:
-            sets = response.json()['dataSetsInfo']['sets']
+            try:
+                sets = response.json()['dataSetsInfo']['sets']
+            except KeyError:
+                sets = []
             return bool(filter(lambda x: x['meta']['identifier'] == '%s.dataset.dt' % name.lower(), sets))
 
     def upload_time(self, name):
