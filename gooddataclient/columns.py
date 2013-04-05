@@ -49,6 +49,10 @@ class Column(object):
         except NotImplementedError:
             pass
 
+        # we return the part as a list of dict,
+        # in simple cases the list has one element,
+        # but in some cases it can have several parts
+        # like Date columns for instance
         return [part]
 
     def populates(self):
