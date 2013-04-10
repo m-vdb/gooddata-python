@@ -65,11 +65,7 @@ class Dataset(object):
         for dataset in datasets:
             if dataset['meta']['title'] == name:
                 return dataset
-        err_json = {
-            'sets': datasets,
-            'project_name': name
-        }
-        raise DataSetNotFoundError('DataSet %s not found' % name, err_json)
+        raise DataSetNotFoundError('DataSet %s not found', sets=datasets, project_name=name)
 
     def delete(self, name):
         dataset = self.get_metadata(name)
@@ -237,12 +233,8 @@ class DateDimension(object):
         it checks if the date dimension already exists.
         """
         if name and self.date_exists(name):
-            err_json = {
-                'date_name': name,
-                'include_time': include_time,
-            }
-            err_msg = 'Date dimension already exists : %(date_name)s' % err_json
-            raise MaqlValidationFailed(err_msg, err_json)
+            err_msg = 'Date dimension already exists : %(date_name)s'
+            raise MaqlValidationFailed(err_msg, date_name=name, include_time=include_time)
 
         self.project.execute_maql(self.get_maql(name, include_time))
         if include_time:
@@ -259,12 +251,11 @@ class DateDimension(object):
             response = self.connection.get(self.DATASETS_URI % self.project.id)
             response.raise_for_status()
         except HTTPError, err:
-            err_json = {
-                'status_code': err.response.status_code,
-                'reponse': err.response,
-            }
-            err_msg = 'Could not check if date exists: %(status_code)s' % err_json
-            raise MaqlValidationFailed(err_msg, err_json)
+            err_msg = 'Could not check if date exists: %(status_code)s'
+            raise MaqlValidationFailed(
+                err_msg, response=err.response,
+                status_code=err.response.status_code
+            )
         else:
             try:
                 sets = response.json()['dataSetsInfo']['sets']

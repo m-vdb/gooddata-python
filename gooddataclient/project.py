@@ -42,11 +42,9 @@ class Project(object):
             if link['title'] == name:
                 logger.debug('Retrieved Project identifier for %s: %s' % (name, link['identifier']))
                 return link['identifier']
-        err_json = {
-            'links': data['about']['links'],
-            'project_name': name,
-        }
-        raise ProjectNotFoundError('Failed to retrieve Project identifier for %s' % (name), err_json)
+
+        err_msg = 'Failed to retrieve Project identifier for %(project_name)s'
+        raise ProjectNotFoundError(err_msg, links=data['about']['links'], project_name=name)
 
     def create(self, name, gd_token, desc=None, template_uri=None):
         """Create a new GoodData project"""
@@ -68,13 +66,11 @@ class Project(object):
             response = self.connection.post(self.PROJECTS_URI, request_data)
             response.raise_for_status()
         except HTTPError, err:
-            err_json = {
-                'name': name,
-                'status_code': err.response.status_code,
-                'response': err.response.content
-            }
-            err_msg = 'Could not create project (%(name)s), status code: %(status_code)s' % err_json
-            raise ProjectCreationError(err_msg, err_json)
+            err_msg = 'Could not create project (%(name)s), status code: %(status_code)s'
+            raise ProjectCreationError(
+                err_msg, name=name, response=err.response.content,
+                status_code=err.response.status_code
+            )
         else:
             id = response.json()['uri'].split('/')[-1]
             logger.debug("Created project name=%s with id=%s" % (name, id))
@@ -86,19 +82,15 @@ class Project(object):
             uri = '/'.join((self.PROJECTS_URI, self.id))
             self.connection.delete(uri=uri)
         except HTTPError, err:
-            err_json = {
-                'project_id': self.id,
-                'uri': uri,
-                'status_code': err.response.status_code,
-                'response': err.response.content
-            }
-            raise ProjectNotOpenedError('Project does not seem to be opened: %s' % self.id, err_json)
+            err_msg = 'Project does not seem to be opened: %(project_id)s'
+            raise ProjectNotOpenedError(
+                err_msg, project_id=self.id, uri=uri,
+                status_code=err.response.status_code,
+                response=err.response.content
+            )
         except TypeError:
-            err_json = {
-                'project_id': self.id,
-                'uri': uri
-            }
-            raise ProjectNotOpenedError('Project does not seem to be opened: %s' % self.id, err_json)
+            err_msg = 'Project does not seem to be opened: %(project_id)s'
+            raise ProjectNotOpenedError(err_msg, project_id=self.id, uri=uri)
 
     def validate_maql(self, maql):
         """
@@ -113,18 +105,17 @@ class Project(object):
             response = self.connection.post(uri=self.MAQL_VALID_URI % self.id, data=data)
             response.raise_for_status()
         except HTTPError, err:
-            err_msg = 'Could not access to remote validator: %s' % err.response.status_code
-            err_json = {
-                'status_code': err.response.status_code,
-                'response': err.response.content,
-            }
-            raise MaqlValidationFailed(err_msg, err_json)
+            err_msg = 'Could not access to remote validator: %(status_code)s'
+            raise MaqlValidationFailed(
+                err_msg, response=err.response.content,
+                status_code=err.response.status_code
+            )
         else:
             # verify response content
             content = response.json()
             if 'maqlOK' not in content:
                 err_msg = 'MAQL queries did not validate'
-                raise MaqlValidationFailed(err_msg, content)
+                raise MaqlValidationFailed(err_msg, reponse=content)
 
     def execute_maql(self, maql, wait_for_finish=True):
         self.validate_maql(maql)
@@ -135,12 +126,10 @@ class Project(object):
             response.raise_for_status()
         except HTTPError, err:
             err_json = err.response.json()['error']
-            err_json.update({
-                'status_code': err.response.status_code,
-                'maql': maql,
-            })
-
-            raise MaqlExecutionFailed(get_api_msg(err_json),err_json)
+            raise MaqlExecutionFailed(
+                get_api_msg(err_json), gd_error=err_json,
+                status_code=err.response.status_code, maql=maql
+            )
         # It seems the API can retrieve several links
         task_uris = [entry['link'] for entry in response.json()['entries']]
 
@@ -161,9 +150,10 @@ class Project(object):
                                                 {'pullIntegration': dir_name})
             else:
                 err_json = err.response.json()['error']
-                err_json['status_code'] = status_code
-                err_json['dir_name'] = dir_name
-                raise UploadFailed(get_api_msg(err_json), err_json)
+                raise UploadFailed(
+                    get_api_msg(err_json), gd_error=err_json,
+                    status_code=status_code, dir_name=dir_name
+                )
         task_uri = response.json()['pullTask']['uri']
 
         if wait_for_finish:
@@ -187,9 +177,10 @@ class Project(object):
                 break
             if status in ('ERROR', 'WARNING'):
                 err_json = err_json or {}
-                err_json.update(response)
-                err_msg = 'An error occured while polling uri %s' % uri
-                import pdb; pdb.set_trace()
-                raise ErrorClass(err_msg, err_json)
+                err_msg = 'An error occured while polling uri %(uri)s'
+                raise ErrorClass(
+                    err_msg, response=response,
+                    custom_error=err_json, uri=uri
+                )
 
             time.sleep(0.5)

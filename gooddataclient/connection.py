@@ -46,7 +46,7 @@ class Connection(object):
             r2 = self.get(uri=self.TOKEN_URI)
             r2.raise_for_status()
         except HTTPError, err:
-            raise AuthenticationError(str(err), err.response.content)
+            raise AuthenticationError(str(err), content=err.response.content)
 
     def relogin(self):
         self.login(self.username, self.password)
