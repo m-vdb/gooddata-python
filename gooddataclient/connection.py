@@ -1,28 +1,19 @@
 import os
-import urllib2
-import cookielib
-import simplejson as json
 import logging
 
+import simplejson as json
+import requests
+from requests.exceptions import HTTPError
+
 from gooddataclient.exceptions import AuthenticationError
-from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME
+from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME, DLI_MANIFEST_FILENAME
 
 logger = logging.getLogger("gooddataclient")
 
-class RequestWithMethod(urllib2.Request):
-
-    def __init__(self, method, *args, **kwargs):
-        self._method = method
-        urllib2.Request.__init__(self, *args, **kwargs)
-
-    def get_method(self):
-        if self._method:
-            return self._method
-        elif self.has_data():
-            return 'POST'
-        else:
-            return 'GET'
-
+JSON_HEADERS = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+}
 
 
 class Connection(object):
@@ -33,62 +24,62 @@ class Connection(object):
     TOKEN_URI = '/gdc/account/token'
     MD_URI = '/gdc/md/'
 
-    JSON_HEADERS = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'gooddata-python/0.1'
-    }
-
-    def __init__(self, username, password, debug=0):
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
         self.webdav = Webdav(username, password)
-        self.setup_urllib2(debug)
         self.login(username, password)
-
-    def setup_urllib2(self, debug):
-        handlers = [urllib2.HTTPCookieProcessor(cookielib.CookieJar()),
-                    urllib2.HTTPHandler(debuglevel=debug),
-                    urllib2.HTTPSHandler(debuglevel=debug),
-                    ]
-        handlers.append(self.webdav.get_handler())
-        opener = urllib2.build_opener(*handlers)
-        urllib2.install_opener(opener)
 
     def login(self, username, password):
         try:
-            request_data = {'postUserLogin': {
-                              'login': username,
-                              'password': password,
-                              'remember': 1,
-                              }}
-            response = self.request(self.LOGIN_URI, request_data)
-            response['userLogin']['profile']
-            self.request(self.TOKEN_URI)
-        except urllib2.URLError:
-            raise AuthenticationError('Please provide correct username and password.')
-        except KeyError:
-            raise AuthenticationError('No userLogin information in response to login.')
+            data = {
+                'postUserLogin': {
+                    'login': username,
+                    'password': password,
+                    'remember': 1,
+                }
+            }
+            r1 = self.post(uri=self.LOGIN_URI, data=data, login=True)
+            r1.raise_for_status()
+            self.cookies = self.webdav.cookies = r1.cookies
 
-    def request(self, uri, data=None, headers=JSON_HEADERS, method=None):
-        logger.debug(uri)
-        #data to json
-        if data and isinstance(data, dict):
-            data = json.dumps(data)
-        #uri with host
-        full_uri = ''.join((self.HOST, uri))
-        #updating headers
-        headers['Content-Length'] = str(len(data)) if data else 0
-        request = RequestWithMethod(method, full_uri, data, headers)
-        try:
-            response = urllib2.urlopen(request)
-        except urllib2.URLError, err:
-            logger.error(err)
-            raise
-        if response.info().gettype() == 'application/json':
-            return json.loads(response.read())
+            r2 = self.get(uri=self.TOKEN_URI)
+            r2.raise_for_status()
+        except HTTPError, err:
+            raise AuthenticationError(str(err), err.response.content)
+
+    def relogin(self):
+        self.login(self.username, self.password)
+
+    def get(self, uri):
+        logger.debug('GET: %s' % uri)
+        response = requests.get(self.HOST + uri,
+                                cookies=self.cookies,
+                                headers=JSON_HEADERS,
+                                auth=(self.username, self.password))
         return response
 
+    def post(self, uri, data, headers=JSON_HEADERS, login=False):
+        logger.debug('POST: %s' % uri)
+        kwargs = {
+            'url': self.HOST + uri,
+            'data': json.dumps(data),
+            'headers': headers,
+            'auth': (self.username, self.password)
+        }
+        if not login:
+            kwargs['cookies'] = self.cookies
+
+        return requests.post(**kwargs)
+
+    def delete(self, uri):
+        logger.debug('DELETE: %s' % uri)
+        r = requests.delete(url=self.HOST + uri, auth=(self.username, self.password))
+        r.raise_for_status()
+        return r
+
     def get_metadata(self):
-        return self.request(self.MD_URI)
+        return self.get(self.MD_URI).json()
 
 
 class Webdav(Connection):
@@ -100,42 +91,44 @@ class Webdav(Connection):
         self.username = username
         self.password = password
 
-    def get_handler(self):
-        passman = urllib2.HTTPPasswordMgrWithDefaultRealm()
-        passman.add_password(None, self.HOST, self.username, self.password)
-        return urllib2.HTTPBasicAuthHandler(passman)
-
-    def request(self, *args, **kwargs):
-        try:
-            return super(Webdav, self).request(*args, **kwargs)
-        except urllib2.URLError, err:
-            if hasattr(err, 'code') and err.code in (201, 204, 207):
-                return
-            raise
-
     def upload(self, data, sli_manifest):
         '''Create zip file with data in csv format and manifest file, then create
-        directory in webdav and upload the zip file there. 
-        
+        directory in webdav and upload the zip file there.
+
         @param data: csv data to upload
         @param sli_manifest: dictionary with the columns definitions
-        @param wait_for_finish: check periodically for the integration result
-        
+
         return the name of the temporary file, hence the name of the directory
         created in webdav uploads folder
         '''
-        filename = create_archive(data, sli_manifest)
-        dir_name = os.path.basename(filename)
-        self.request(self.UPLOADS_URI % dir_name, method='MKCOL')
-        f = open(filename, 'rb')
-        # can it be streamed?
-        self.request(''.join((self.UPLOADS_URI % dir_name, DEFAULT_ARCHIVE_NAME)),
-                     data=f.read(), headers={'Content-Type': 'application/zip'},
-                     method='PUT')
-        f.close()
-        os.remove(filename)
+        archive = create_archive(data, sli_manifest)
+        dir_name = os.path.basename(archive)
+        # create the folder on WebDav
+        self.mkcol(uri=self.UPLOADS_URI % dir_name)
+        # open the files to read them
+        f_archive = open(archive, 'rb')
+
+        # upload the files to WebDav
+        archive_uri = ''.join((self.UPLOADS_URI % dir_name, DEFAULT_ARCHIVE_NAME))
+        self.put(uri=archive_uri, data=f_archive.read(),
+                 headers={'Content-Type': 'application/zip'})
+
+        # close and remove the files
+        f_archive.close()
+        os.remove(archive)
+
         return dir_name
 
-    def delete(self, dir_name):
-        self.request(self.UPLOADS_URI % dir_name, method='DELETE')
+    def mkcol(self, uri):
+        logger.debug('MKCOL: %s' % uri)
+        r = requests.request(method='MKCOL', url=self.HOST + uri, auth=(self.username, self.password))
+        r.raise_for_status()
 
+    def put(self, uri, data, headers):
+        logger.debug('PUT: %s' % uri)
+        r = requests.put(url=self.HOST + uri, data=data, headers=headers, auth=(self.username, self.password))
+        r.raise_for_status()
+
+    def delete(self, dir_name):
+        uri = self.UPLOADS_URI % dir_name
+        super(Webdav, self).delete(uri=uri)

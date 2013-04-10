@@ -4,32 +4,32 @@ from gooddataclient.columns import ConnectionPoint, Date, Fact, Reference
 class Salary(Dataset):
 
     salary = ConnectionPoint(title='Salary', folder='Salary')
-    employee = Reference(title='Employee', reference='employee', schemaReference='Employee', folder='Salary')
+    worker = Reference(title='Worker', reference='worker', schemaReference='Worker', folder='Salary')
     payment = Fact(title='Payment', folder='Salary')
     payday = Date(title='Pay Day', format='yyyy-MM-dd', schemaReference='payment', folder='Salary')
 
     class Meta(Dataset.Meta):
-        column_order = ('salary', 'employee', 'payment', 'payday')
+        column_order = ('salary', 'worker', 'payment', 'payday')
 
 
     def data(self):
-        return [{'salary': 's1', 'employee': 'e1', 'payday': '2006-01-01', 'payment': '10230', 'payday_dt': '38717'},
-                 {'salary': 's2', 'employee': 'e2', 'payday': '2006-01-01', 'payment': '4810', 'payday_dt': '38717'},
-                 {'salary': 's3', 'employee': 'e6', 'payday': '2006-01-01', 'payment': '6080', 'payday_dt': '38717'},
-                 {'salary': 's4', 'employee': 'e7', 'payday': '2006-01-01', 'payment': '5740', 'payday_dt': '38717'},
-                 {'salary': 's5', 'employee': 'e10', 'payday': '2006-01-01', 'payment': '6630', 'payday_dt': '38717'},
-                 {'salary': 's9', 'employee': 'e23', 'payday': '2006-01-01', 'payment': '4230', 'payday_dt': '38717'},
-                 {'salary': 's10', 'employee': 'e24', 'payday': '2006-01-01', 'payment': '4230', 'payday_dt': '38717'},
-                 {'salary': 's11', 'employee': 'e25', 'payday': '2006-01-01', 'payment': '3790', 'payday_dt': '38717'},
-                 {'salary': 's12', 'employee': 'e26', 'payday': '2006-01-01', 'payment': '3420', 'payday_dt': '38717'},
-                 {'salary': 's13', 'employee': 'e27', 'payday': '2006-01-01', 'payment': '4220', 'payday_dt': '38717'},
-                 {'salary': 's14', 'employee': 'e28', 'payday': '2006-01-01', 'payment': '3330', 'payday_dt': '38717'},
-                 {'salary': 's15', 'employee': 'e29', 'payday': '2006-01-01', 'payment': '3990', 'payday_dt': '38717'},
-                 {'salary': 's16', 'employee': 'e30', 'payday': '2006-01-01', 'payment': '3610', 'payday_dt': '38717'},
-                 {'salary': 's17', 'employee': 'e31', 'payday': '2006-01-01', 'payment': '4350', 'payday_dt': '38717'},
-                 {'salary': 's18', 'employee': 'e32', 'payday': '2006-01-01', 'payment': '3340', 'payday_dt': '38717'},
-                 {'salary': 's19', 'employee': 'e33', 'payday': '2006-01-01', 'payment': '3990', 'payday_dt': '38717'},
-                 {'salary': 's20', 'employee': 'e34', 'payday': '2006-01-01', 'payment': '3630', 'payday_dt': '38717'}
+        return [{'salary': 's1', 'worker': 'e1', 'payday': '2006-01-01', 'payment': '10230', 'payday_dt': '38717'},
+                 {'salary': 's2', 'worker': 'e2', 'payday': '2006-01-01', 'payment': '4810', 'payday_dt': '38717'},
+                 {'salary': 's3', 'worker': 'e6', 'payday': '2006-01-01', 'payment': '6080', 'payday_dt': '38717'},
+                 {'salary': 's4', 'worker': 'e7', 'payday': '2006-01-01', 'payment': '5740', 'payday_dt': '38717'},
+                 {'salary': 's5', 'worker': 'e10', 'payday': '2006-01-01', 'payment': '6630', 'payday_dt': '38717'},
+                 {'salary': 's9', 'worker': 'e23', 'payday': '2006-01-01', 'payment': '4230', 'payday_dt': '38717'},
+                 {'salary': 's10', 'worker': 'e24', 'payday': '2006-01-01', 'payment': '4230', 'payday_dt': '38717'},
+                 {'salary': 's11', 'worker': 'e25', 'payday': '2006-01-01', 'payment': '3790', 'payday_dt': '38717'},
+                 {'salary': 's12', 'worker': 'e26', 'payday': '2006-01-01', 'payment': '3420', 'payday_dt': '38717'},
+                 {'salary': 's13', 'worker': 'e27', 'payday': '2006-01-01', 'payment': '4220', 'payday_dt': '38717'},
+                 {'salary': 's14', 'worker': 'e28', 'payday': '2006-01-01', 'payment': '3330', 'payday_dt': '38717'},
+                 {'salary': 's15', 'worker': 'e29', 'payday': '2006-01-01', 'payment': '3990', 'payday_dt': '38717'},
+                 {'salary': 's16', 'worker': 'e30', 'payday': '2006-01-01', 'payment': '3610', 'payday_dt': '38717'},
+                 {'salary': 's17', 'worker': 'e31', 'payday': '2006-01-01', 'payment': '4350', 'payday_dt': '38717'},
+                 {'salary': 's18', 'worker': 'e32', 'payday': '2006-01-01', 'payment': '3340', 'payday_dt': '38717'},
+                 {'salary': 's19', 'worker': 'e33', 'payday': '2006-01-01', 'payment': '3990', 'payday_dt': '38717'},
+                 {'salary': 's20', 'worker': 'e34', 'payday': '2006-01-01', 'payment': '3630', 'payday_dt': '38717'}
                  ]
 
 
@@ -67,7 +67,7 @@ ALTER ATTRIBUTE {payment.date} ADD KEYS {f_salary.dt_payday_id};
 # CREATE REFERENCES
 # REFERENCES CONNECT THE DATASET TO OTHER DATASETS
 # CONNECT THE REFERENCE TO THE APPROPRIATE DIMENSION
-ALTER ATTRIBUTE {attr.employee.employee} ADD KEYS {f_salary.employee_id};
+ALTER ATTRIBUTE {attr.worker.worker} ADD KEYS {f_salary.worker_id};
 
 ALTER ATTRIBUTE {attr.salary.salary} ADD LABELS {label.salary.salary} VISUAL(TITLE "Salary") AS {f_salary.nm_salary};
 # SYNCHRONIZE THE STORAGE AND DATA LOADING INTERFACES WITH THE NEW LOGICAL MODEL
@@ -85,11 +85,11 @@ schema_xml = '''
       <folder>Salary</folder>
     </column>
     <column>
-      <name>employee</name>
-      <title>Employee</title>
+      <name>worker</name>
+      <title>Worker</title>
       <ldmType>REFERENCE</ldmType>
-      <reference>employee</reference>
-      <schemaReference>Employee</schemaReference>
+      <reference>worker</reference>
+      <schemaReference>Worker</schemaReference>
       <folder>Salary</folder>
     </column>
     <column>
@@ -110,7 +110,7 @@ schema_xml = '''
 </schema>
 '''
 
-data_csv = '''"salary","employee","payment","payday","payday_dt"
+data_csv = '''"salary","worker","payment","payday","payday_dt"
 "s1","e1","10230","2006-01-01","38717"
 "s2","e2","4810","2006-01-01","38717"
 "s3","e6","6080","2006-01-01","38717"
@@ -140,9 +140,9 @@ sli_manifest = {"dataSetSLIManifest": {
       "referenceKey": 1
     },
         {
-      "columnName": "employee",
+      "columnName": "worker",
       "mode": "FULL",
-      "populates": ["label.employee.employee"],
+      "populates": ["label.worker.worker"],
       "referenceKey": 1
     },
         {

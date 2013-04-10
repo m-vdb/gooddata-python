@@ -9,3 +9,5 @@
 
 username = ''
 password = ''
+project_id = ''
+gd_token = ''

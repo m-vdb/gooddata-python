@@ -1,3 +1,4 @@
+import sys
 import os
 import unittest
 from zipfile import ZipFile
@@ -6,7 +7,7 @@ from gooddataclient.project import Project
 from gooddataclient.archiver import create_archive, write_tmp_csv_file, \
     csv_to_list
 
-from tests import logger, examples
+from tests import logger, examples, get_parser
 
 
 class TestArchiver(unittest.TestCase):
@@ -39,4 +40,7 @@ class TestArchiver(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    args = get_parser().parse_args()
+    logger.logger.setLevel(args.loglevel)
+    del sys.argv[1:]
     unittest.main()
