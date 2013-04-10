@@ -1,12 +1,12 @@
 
 class GoodDataClientError(Exception):
 
-    def __init__(self, msg, error_info=None):
+    def __init__(self, msg, **kwargs):
         self.msg = msg
-        self.error_info = error_info or {}
+        self.error_info = kwargs
 
     def __str__(self):
-        return repr(self.msg)
+        return repr(self.msg % self.error_info)
 
 
 class AuthenticationError(GoodDataClientError):
