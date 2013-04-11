@@ -91,11 +91,12 @@ class Attribute(Column):
                         'name': self.name,
                     })
 
-        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "City") AS {%(identifier)s};'
+        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s") AS {%(identifier)s};'
                     % {
                         'dataset': self.schema_name,
                         'name': self.name,
                         'identifier': self.identifier,
+                        'title': self.title
                     })
 
         # change the datatype if needed
