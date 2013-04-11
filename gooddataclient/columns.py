@@ -34,6 +34,7 @@ class Column(object):
         return self.IDENTIFIER % {
             'dataset': self.schema_name,
             'name': self.name,
+            'reference': self.reference,
         }
 
     def get_sli_manifest_part(self):
@@ -343,7 +344,7 @@ class Reference(Column):
 class Label(Column):
 
     ldmType = 'LABEL'
-    IDENTIFIER = 'f_%(dataset)s.nm_%(name)s'
+    IDENTIFIER = 'd_%(dataset)s_%(reference)s.nm_%(name)s'
 
     def get_maql(self):
         maql = []
