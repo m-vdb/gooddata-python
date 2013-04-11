@@ -1,10 +1,11 @@
+import sys
 import unittest
 from xml.dom.minidom import parseString
 
 from gooddataclient.schema import get_xml_schema
 from gooddataclient.project import Project
 
-from tests import logger, examples
+from tests import logger, examples, get_parser
 
 
 class TestSchema(unittest.TestCase):
@@ -27,4 +28,7 @@ class TestSchema(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    args = get_parser().parse_args()
+    logger.logger.setLevel(args.loglevel)
+    del sys.argv[1:]
     unittest.main()

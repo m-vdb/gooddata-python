@@ -1,8 +1,9 @@
+import sys
 import unittest
 
 from gooddataclient import text
 
-from tests import logger
+from tests import logger, get_parser
 
 
 class TestText(unittest.TestCase):
@@ -12,4 +13,7 @@ class TestText(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    args = get_parser().parse_args()
+    logger.logger.setLevel(args.loglevel)
+    del sys.argv[1:]
     unittest.main()

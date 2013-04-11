@@ -11,12 +11,12 @@ except IOError:
 
 setup(
     name='gooddata-python',
-    version='0.9',
-    url="http://github.com/comoga/gooddata-python",
+    version='1.1',
+    url="https://github.com/Work4Labs/gooddata-python",
     description='Python client for GoodData REST API',
     long_description=long_description,
-    author='Comoga Django Team',
-    author_email='dev@comoga.cz',
+    author='Work4 Labs Analytics',
+    author_email='mvergerdelbove@work4labs.com',
     license='BSD',
     keywords='gooddata python api'.split(),
     platforms='any',
@@ -33,4 +33,5 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     test_suite='tests.runtests.main',
+    install_requires=['requests', 'simplejson'],
 )
