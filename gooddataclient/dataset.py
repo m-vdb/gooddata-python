@@ -48,8 +48,14 @@ class Dataset(object):
 
     def get_columns(self):
         columns = []
-        for name, column in self.get_class_members():
+        class_members = self.get_class_members()
+        for name, column in class_members:
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
+            # need to mark the labels referencing
+            # connection points, they are different
+            if isinstance(column, Label):
+                if isinstance(class_members[column.reference], ConnectionPoint):
+                    column.references_cp = True
             columns.append(column)
         return columns
 
