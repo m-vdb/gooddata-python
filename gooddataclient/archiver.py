@@ -1,4 +1,5 @@
 import os
+import shutil
 from tempfile import mkstemp
 from zipfile import ZipFile
 import datetime
@@ -85,7 +86,8 @@ def write_tmp_zipfile(files):
     return filename
 
 
-def create_archive(data, sli_manifest, dates, datetimes):
+def create_archive(data, sli_manifest, dates, datetimes,
+                   keep_csv=False, csv_file=None):
     """
     Zip the data and sli_manifest files to an archive.
     Remember to os.remove(filename) after use.
@@ -110,7 +112,13 @@ def create_archive(data, sli_manifest, dates, datetimes):
         (data_path, CSV_DATA_FILENAME),
         (sli_manifest_path, DLI_MANIFEST_FILENAME)
     ))
-    os.remove(data_path)
+
+    if keep_csv:
+        if not csv_file:
+            raise TypeError('Keep csv option with no csv file path')
+        shutil.move(data_path, csv_file)
+    else:
+        os.remove(data_path)
     os.remove(sli_manifest_path)
     return archive
 
