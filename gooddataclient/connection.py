@@ -91,7 +91,7 @@ class Webdav(Connection):
         self.username = username
         self.password = password
 
-    def upload(self, data, sli_manifest):
+    def upload(self, data, sli_manifest, dates=[], datetimes=[]):
         '''Create zip file with data in csv format and manifest file, then create
         directory in webdav and upload the zip file there.
 
@@ -101,7 +101,7 @@ class Webdav(Connection):
         return the name of the temporary file, hence the name of the directory
         created in webdav uploads folder
         '''
-        archive = create_archive(data, sli_manifest)
+        archive = create_archive(data, sli_manifest, dates, datetimes)
         dir_name = os.path.basename(archive)
         # create the folder on WebDav
         self.mkcol(uri=self.UPLOADS_URI % dir_name)

@@ -55,7 +55,7 @@ class Dataset(object):
             if isinstance(column, Label):
                 if isinstance(getattr(self, column.reference), ConnectionPoint):
                     column.references_cp = True
-            columns.append(column)
+            columns.append((name, column))
         return columns
 
     def get_datasets_metadata(self):
@@ -80,13 +80,29 @@ class Dataset(object):
         raise NotImplementedError
 
     def get_date_dimension(self):
-        for column in self.get_columns():
+        #support several date dimensions
+        for _, column in self.get_columns():
             if isinstance(column, Date):
-                return column
+                yield column
+
+    def get_datetime_column_names(self):
+        """
+        Get the list of date and datetime
+        columns, and return both lists.
+        """
+        dates = []
+        datetimes = []
+        for name, column in self.get_columns():
+            if isinstance(column, Date):
+                if column.datetime:
+                    datetimes.append(name)
+                else:
+                    dates.append(name)
+
+        return dates, datetimes
 
     def create(self):
-        date_dimension = self.get_date_dimension()
-        if date_dimension:
+        for date_dimension in self.get_date_dimension():
             DateDimension(self.project).create(name=date_dimension.schemaReference,
                                                include_time=date_dimension.datetime)
         self.project.execute_maql(self.get_maql())
@@ -96,13 +112,18 @@ class Dataset(object):
             self.get_metadata(self.schema_name)
         except DataSetNotFoundError:
             self.create()
-        dir_name = self.connection.webdav.upload(self.data(*args, **kwargs), self.get_sli_manifest())
+
+        dates, datetimes = self.get_datetime_column_names()
+        dir_name = self.connection.webdav.upload(
+            self.data(*args, **kwargs), self.get_sli_manifest(),
+            dates, datetimes
+        )
         self.project.integrate_uploaded_data(dir_name)
         self.connection.webdav.delete(dir_name)
 
     def get_folders(self):
         attribute_folders, fact_folders = [], []
-        for column in self.get_columns():
+        for _, column in self.get_columns():
             if column.folder:
                 if isinstance(column, (Attribute, Label, ConnectionPoint, Reference)):
                     if (column.folder, column.folder_title) not in attribute_folders:
@@ -118,7 +139,7 @@ class Dataset(object):
         See populateColumnsFromSchema in AbstractConnector.java
         '''
         parts = []
-        for column in self.get_columns():
+        for _, column in self.get_columns():
             parts.extend(column.get_sli_manifest_part())
 
         return {"dataSetSLIManifest": {"parts": parts,
@@ -155,26 +176,26 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
 
         # Append the attributes, ConnectionPoint, and Date that doesn't have schemaReference
         maql.append('# CREATE ATTRIBUTES.')
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, (Attribute, ConnectionPoint))\
                 or (isinstance(column, Date) and not column.schemaReference):
                 maql.append(column.get_maql())
 
         # Append the facts and date facts
         maql.append('# CREATE FACTS AND DATE FACTS')
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, Fact):
                 maql.append(column.get_maql())
 
         # Append the references
         maql.append('# CREATE REFERENCES')
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, Reference):
                 maql.append(column.get_maql())
 
         # Append the labels and set a default one
         default_set = False
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, Label):
                 maql.append(column.get_maql())
                 if not default_set:
@@ -182,7 +203,7 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
                     default_set = True
 
         cp = False
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, ConnectionPoint):
                 cp = True
                 maql.append('# ADD LABEL TO CONNECTION POINT')
