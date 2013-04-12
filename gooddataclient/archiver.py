@@ -4,19 +4,16 @@ from zipfile import ZipFile
 import datetime
 import hashlib
 from collections import Iterable
+from datetime import timedelta, datetime
 
 import simplejson as json
+
+from gooddataclient.formatter import csv_encode, format_dates
 
 
 DLI_MANIFEST_FILENAME = 'upload_info.json'
 CSV_DATA_FILENAME = 'data.csv'
 DEFAULT_ARCHIVE_NAME = 'upload.zip'
-
-
-def csv_encode(val):
-    if not isinstance(val, basestring):
-        val = str(val)
-    return '"' + val.replace('"', '""') + '"'
 
 
 def value_list_from_dict(values, fields):
@@ -49,11 +46,13 @@ def write_tmp_file(content):
     return filename
 
 
-def write_tmp_csv_file(csv_data, sli_manifest):
+def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
     '''Write a CSV temporary file with values in csv_data - list of dicts.
 
     @param csv_data: list of dicts
     @param sli_manifest: json sli_manifest
+    @param dates: list of date fields
+    @param datetimes: list of datetime fields
     '''
     fieldnames = [part['columnName'] for part in sli_manifest['dataSetSLIManifest']['parts']]
     fp, filename = mkstemp()
@@ -63,19 +62,7 @@ def write_tmp_csv_file(csv_data, sli_manifest):
         write_csv_line(file, fieldnames)
 
         for line in csv_data:
-            for key in fieldnames:
-                #some incredible magic with additional date field
-                if not key in line and key.endswith('_dt'):
-                    h = hashlib.md5()
-                    h.update(line[key[:-3]])
-                    line[key] = h.hexdigest()[:6]
-                #formatting the date properly
-                if isinstance(line[key], datetime.datetime):
-                    line[key] = line[key].strftime("%Y-%m-%d")
-                #make 0/1 from bool
-                if isinstance(line[key], bool):
-                    line[key] = int(line[key])
-
+            line = format_dates(line, dates, datetimes)
             write_csv_line(file, value_list_from_dict(line, fieldnames))
 
     return filename
@@ -98,7 +85,7 @@ def write_tmp_zipfile(files):
     return filename
 
 
-def create_archive(data, sli_manifest):
+def create_archive(data, sli_manifest, dates, datetimes):
     """
     Zip the data and sli_manifest files to an archive.
     Remember to os.remove(filename) after use.
@@ -111,7 +98,7 @@ def create_archive(data, sli_manifest):
     if isinstance(data, str):
         data_path = write_tmp_file(data)
     elif isinstance(data, Iterable):
-        data_path = write_tmp_csv_file(data, sli_manifest)
+        data_path = write_tmp_csv_file(data, sli_manifest, dates, datetimes)
     else:
         raise TypeError('Data should be either a string or an iterable')
 
