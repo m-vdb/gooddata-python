@@ -5,7 +5,7 @@ def get_xml_schema(dataset):
     MAQL through the Java Client.
     '''
     dom = parseString('<schema><name>%s</name><columns></columns></schema>' % dataset.schema_name)
-    for column in dataset.get_columns():
+    for _, column in dataset.get_columns():
         xmlcol = dom.createElement('column')
         for key, val in column.get_schema_values():
             k = dom.createElement(key)
