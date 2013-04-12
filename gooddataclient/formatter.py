@@ -35,18 +35,24 @@ def format_dates(line, dates, datetimes):
 
         # date id
         line['%s_dt' % date_field] = get_date_id(date_value)
-        # date value
-        if isinstance(date_value, datetime):
-            line[date_field] = date_value.strftime('%Y-%m-%d')
-        else:
-            line[date_field] = DATE_NULL
-
+        
         if date_field in datetimes:
             number_of_seconds = get_seconds(date_value)
             # time id
             line['%s_tm' % date_field] = number_of_seconds
             # time value
             line['tm_%s_id' % date_field] = number_of_seconds
+            # date value
+            if isinstance(date_value, datetime):
+                line[date_field] = date_value.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                line[date_field] = DATE_NULL
+        else:
+            # date value
+            if isinstance(date_value, datetime):
+                line[date_field] = date_value.strftime('%Y-%m-%d')
+            else:
+                line[date_field] = DATE_NULL
 
     return line
 

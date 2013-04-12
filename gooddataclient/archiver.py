@@ -120,13 +120,14 @@ def csv_to_list(data_csv):
     
     @param data_csv: CSV in a string
     '''
-    reader = csv.reader(data_csv.strip().split('\n'))
-    header = reader.next()
+    lines = data_csv.strip().split('\n')
+    header = lines[0].replace('"', '').split(',')
     data_list = []
-    for line in reader:
+    for line in lines[1:]:
+        line = line.replace('"', '').split(',')
         l = {}
         for i, value in enumerate(header):
-            l[value] = line[i]
+            l[value] = line[i].decode('utf-8')
         data_list.append(l)
     return data_list
 
