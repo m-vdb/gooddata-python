@@ -18,7 +18,6 @@ class TestDataset(unittest.TestCase):
         self.connection = Connection(username, password)
 
         if gd_token:
-            delete_projects_by_name(self.connection, TEST_PROJECT_NAME)
             self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
         else:
             self.project = Project(self.connection).load(id=project_id)

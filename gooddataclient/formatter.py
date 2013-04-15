@@ -42,6 +42,7 @@ def format_dates(line, dates, datetimes):
             line['%s_tm' % date_field] = number_of_seconds
             # time value
             line['tm_%s_id' % date_field] = number_of_seconds
+
             # date value
             if isinstance(date_value, datetime):
                 line[date_field] = date_value.strftime('%Y-%m-%d %H:%M:%S')
