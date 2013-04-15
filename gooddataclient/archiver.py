@@ -72,9 +72,9 @@ def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
 def write_tmp_zipfile(files):
     '''Zip files into a single file.
     Remember to os.remove(filename) after use.
-    
+
     @param files: list of tuples (path_to_the_file, name_of_the_file)
-    
+
     return filename of the created temporary zip file
     '''
     fp, filename = mkstemp()

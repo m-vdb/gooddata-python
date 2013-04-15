@@ -35,7 +35,7 @@ def format_dates(line, dates, datetimes):
 
         # date id
         line['%s_dt' % date_field] = get_date_id(date_value)
-        
+
         if date_field in datetimes:
             number_of_seconds = get_seconds(date_value)
             # time id
