@@ -139,3 +139,19 @@ def csv_to_list(data_csv):
         data_list.append(l)
     return data_list
 
+
+def csv_to_iterator(data_csv):
+    """
+    Create a generator from CSV string.
+
+    @param data_csv: CSV in a string
+    """
+    lines = data_csv.strip().split('\n')
+    header = lines[0].replace('"', '').split(',')
+
+    for line in lines[1:]:
+        line = line.replace('"', '').split(',')
+        l = {}
+        for i, value in enumerate(header):
+            l[value] = line[i].decode('utf-8')
+        yield l
