@@ -258,13 +258,10 @@ class DateDimension(object):
         A function to create the date dimension. Before executing the MAQL,
         it checks if the date dimension already exists.
         """
-        if name and self.date_exists(name):
-            err_msg = 'Date dimension already exists : %(date_name)s'
-            raise MaqlValidationFailed(err_msg, date_name=name, include_time=include_time)
-
-        self.project.execute_maql(self.get_maql(name, include_time))
-        if include_time:
-            self.upload_time(name)
+        if not name or (name and not self.date_exists(name)):
+            self.project.execute_maql(self.get_maql(name, include_time))
+            if include_time:
+                self.upload_time(name)
         return self
 
     def date_exists(self, name):
