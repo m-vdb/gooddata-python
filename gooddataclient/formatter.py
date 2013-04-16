@@ -75,7 +75,7 @@ def csv_encode(val):
     elif not isinstance(val, basestring):
         val = str(val)
 
-    return '"' + val.replace('"', '""') + '"'
+    return val
 
 
 def csv_encode_dict(dict_data):
@@ -90,7 +90,7 @@ def csv_encode_dict(dict_data):
 
 
 def csv_decode(val):
-    val = val.strip('"').replace('""', '"').decode('utf-8')
+    val = val.decode('utf-8')
 
     if val == NULL:
         return None
