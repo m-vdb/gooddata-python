@@ -1,5 +1,8 @@
 from datetime import datetime
 
+from dateutil.parser import parse
+
+
 NULL = 'NULL'
 DATE_NULL = ''
 FALSY_DATES = (None, '', 'NULL')
@@ -59,12 +62,69 @@ def format_dates(line, dates, datetimes):
 
 
 def csv_encode(val):
-    #handle null values
+    # handle null values
     if val is None:
         val = NULL
+    # handle boolean
     elif isinstance(val, bool):
         val = BOOL_TRUE if val else BOOL_FALSE
-    #handle int, bigint, decimal
+    # handle unicode encoding
+    elif isinstance(val, unicode):
+        val = val.encode('utf-8')
+    # handle int, bigint, decimal
     elif not isinstance(val, basestring):
         val = str(val)
+
     return '"' + val.replace('"', '""') + '"'
+
+
+def csv_encode_dict(dict_data):
+    """
+    A function to encode / format a dictionary values.
+    """
+
+    for key, value in dict_data.iteritems():
+        dict_data[key] = csv_encode(value)
+
+    return dict_data
+
+
+def csv_decode(val):
+    val = val.strip('"').replace('""', '"').decode('utf-8')
+
+    if val == NULL:
+        return None
+    if val == BOOL_TRUE:
+        return True
+    if val == BOOL_FALSE:
+        return False
+
+    # dates
+    try:
+        val = parse(val)
+    except:
+        pass
+    else:
+        return val
+
+    # int & float
+    try:
+        i = int(val)
+        f = float(val)
+    except:
+        pass
+    else:
+        return i if i == f else f
+
+    return val
+
+
+def csv_decode_dict(dict_data):
+    """
+    A function to decode / unformat a dictionary values
+    """
+
+    for key, value in dict_data.iteritems():
+        dict_data[key] = csv_decode(value)
+
+    return dict_data

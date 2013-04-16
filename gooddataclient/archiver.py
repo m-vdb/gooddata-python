@@ -1,34 +1,20 @@
+from collections import Iterable
+import csv
+from datetime import timedelta, datetime
+import hashlib
 import os
 import shutil
 from tempfile import mkstemp
 from zipfile import ZipFile
-import datetime
-import hashlib
-from collections import Iterable
-from datetime import timedelta, datetime
 
 import simplejson as json
 
-from gooddataclient.formatter import csv_encode, format_dates
+from gooddataclient.formatter import csv_encode_dict, csv_decode_dict, format_dates
 
 
 DLI_MANIFEST_FILENAME = 'upload_info.json'
 CSV_DATA_FILENAME = 'data.csv'
 DEFAULT_ARCHIVE_NAME = 'upload.zip'
-
-
-def value_list_from_dict(values, fields):
-    return [values[field] for field in fields]
-
-
-def write_csv_line(file_handle, values):
-    """
-    A function to write a csv line,
-    as csv python module does not handle
-    """
-    fmt_values = map(csv_encode, values)
-    file_handle.write((','.join(fmt_values)).encode('UTF-8'))
-    file_handle.write("\n")
 
 
 def write_tmp_file(content):
@@ -48,7 +34,8 @@ def write_tmp_file(content):
 
 
 def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
-    '''Write a CSV temporary file with values in csv_data - list of dicts.
+    '''
+    Write a CSV temporary file with values in csv_data - list of dicts.
 
     @param csv_data: list of dicts
     @param sli_manifest: json sli_manifest
@@ -59,12 +46,19 @@ def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
     fp, filename = mkstemp()
 
     with open(filename, 'w+b') as file:
-
-        write_csv_line(file, fieldnames)
+        writer = csv.DictWriter(
+            file, fieldnames=fieldnames,
+            delimiter=sli_manifest['dataSetSLIManifest']['csvParams']['separatorChar'],
+            quotechar=sli_manifest['dataSetSLIManifest']['csvParams']['quoteChar'],
+            quoting=csv.QUOTE_ALL
+        )
+        headers = dict((n, n) for n in fieldnames)
+        writer.writerow(headers)
 
         for line in csv_data:
             line = format_dates(line, dates, datetimes)
-            write_csv_line(file, value_list_from_dict(line, fieldnames))
+            line = csv_encode_dict(line)
+            writer.writerow(line)
 
     return filename
 
@@ -124,19 +118,17 @@ def create_archive(data, sli_manifest, dates, datetimes,
 
 
 def csv_to_list(data_csv):
-    '''Create list of dicts from CSV string.
-    
+    '''
+    Create list of dicts from CSV string.
+
     @param data_csv: CSV in a string
     '''
-    lines = data_csv.strip().split('\n')
-    header = lines[0].replace('"', '').split(',')
+    reader = csv.DictReader(data_csv.strip().split('\n'))
     data_list = []
-    for line in lines[1:]:
-        line = line.replace('"', '').split(',')
-        l = {}
-        for i, value in enumerate(header):
-            l[value] = line[i].decode('utf-8')
-        data_list.append(l)
+
+    for line in reader:
+        line = csv_decode_dict(line)
+        data_list.append(line)
     return data_list
 
 
@@ -146,12 +138,7 @@ def csv_to_iterator(data_csv):
 
     @param data_csv: CSV in a string
     """
-    lines = data_csv.strip().split('\n')
-    header = lines[0].replace('"', '').split(',')
+    reader = csv.DictReader(data_csv.strip().split('\n'))
 
-    for line in lines[1:]:
-        line = line.replace('"', '').split(',')
-        l = {}
-        for i, value in enumerate(header):
-            l[value] = line[i].decode('utf-8')
-        yield l
+    for line in reader:
+        yield csv_decode_dict(line)

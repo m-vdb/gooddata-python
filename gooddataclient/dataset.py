@@ -52,9 +52,9 @@ class Dataset(object):
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
             # need to mark the labels referencing
             # connection points, they are different
-            if isinstance(column, Label):
-                if isinstance(getattr(self, column.reference), ConnectionPoint):
-                    column.references_cp = True
+            if isinstance(column, Label) and \
+               isinstance(getattr(self, column.reference), ConnectionPoint):
+                column.references_cp = True
             columns.append((name, column))
         return columns
 
@@ -70,7 +70,10 @@ class Dataset(object):
         for dataset in datasets:
             if dataset['meta']['title'] == name:
                 return dataset
-        raise DataSetNotFoundError('DataSet %s not found', sets=datasets, project_name=name)
+        raise DataSetNotFoundError(
+            'DataSet %(dataset)s not found', sets=datasets,
+            project_name=name, dataset=name
+        )
 
     def delete(self, name):
         dataset = self.get_metadata(name)
@@ -87,8 +90,7 @@ class Dataset(object):
 
     def get_datetime_column_names(self):
         """
-        Get the list of date and datetime
-        columns, and return both lists.
+        Get the list of date and datetime columns, and return both lists.
         """
         dates = []
         datetimes = []
@@ -164,6 +166,8 @@ class Dataset(object):
                                                      "endOfLine": "\n"
                                                      }}}
 
+    # FIXME: this is a bit repetitive, we can think of a
+    #        better approach.
     def get_maql(self):
         maql = []
 
@@ -222,7 +226,6 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
                 maql.append('# ADD LABEL TO CONNECTION POINT')
                 maql.append(column.get_original_label_maql())
 
-        # FIXME : not sure this is useful ?
         if not cp:
             maql.append('CREATE ATTRIBUTE {attr.%s.factsof} VISUAL(TITLE "Records of %s") AS KEYS {f_%s.id} FULLSET;'
                         % (to_identifier(self.schema_name), to_title(self.schema_name), to_identifier(self.schema_name)))
