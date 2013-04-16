@@ -99,14 +99,6 @@ def csv_decode(val):
     if val == BOOL_FALSE:
         return False
 
-    # dates
-    try:
-        val = parse(val)
-    except:
-        pass
-    else:
-        return val
-
     # int & float
     try:
         i = int(val)
@@ -115,6 +107,14 @@ def csv_decode(val):
         pass
     else:
         return i if i == f else f
+
+    # dates
+    try:
+        val = parse(val)
+    except:
+        pass
+    else:
+        return val
 
     return val
 
