@@ -11,7 +11,7 @@ except IOError:
 
 setup(
     name='gooddata-python',
-    version='1.1.1',
+    version='1.1',
     url="https://github.com/Work4Labs/gooddata-python",
     description='Python client for GoodData REST API',
     long_description=long_description,
