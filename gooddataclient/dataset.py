@@ -153,6 +153,8 @@ class Dataset(object):
                                                      "endOfLine": "\n"
                                                      }}}
 
+    # FIXME: this is a bit repetitive, we can think of a
+    #        better approach.
     def get_maql(self):
         maql = []
 
@@ -211,7 +213,6 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
                 maql.append('# ADD LABEL TO CONNECTION POINT')
                 maql.append(column.get_original_label_maql())
 
-        # FIXME : not sure this is useful ?
         if not cp:
             maql.append('CREATE ATTRIBUTE {attr.%s.factsof} VISUAL(TITLE "Records of %s") AS KEYS {f_%s.id} FULLSET;'
                         % (to_identifier(self.schema_name), to_title(self.schema_name), to_identifier(self.schema_name)))
