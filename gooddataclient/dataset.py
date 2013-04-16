@@ -52,9 +52,9 @@ class Dataset(object):
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
             # need to mark the labels referencing
             # connection points, they are different
-            if isinstance(column, Label):
-                if isinstance(getattr(self, column.reference), ConnectionPoint):
-                    column.references_cp = True
+            if isinstance(column, Label) and \
+               isinstance(getattr(self, column.reference), ConnectionPoint):
+                column.references_cp = True
             columns.append((name, column))
         return columns
 
@@ -90,8 +90,7 @@ class Dataset(object):
 
     def get_datetime_column_names(self):
         """
-        Get the list of date and datetime
-        columns, and return both lists.
+        Get the list of date and datetime columns, and return both lists.
         """
         dates = []
         datetimes = []

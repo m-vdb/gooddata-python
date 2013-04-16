@@ -1,10 +1,9 @@
+from collections import Iterable
+from datetime import timedelta, datetime
+import hashlib
 import os
 from tempfile import mkstemp
 from zipfile import ZipFile
-import datetime
-import hashlib
-from collections import Iterable
-from datetime import timedelta, datetime
 
 import simplejson as json
 
