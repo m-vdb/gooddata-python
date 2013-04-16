@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from gooddataclient.dataset import Dataset
 from gooddataclient.columns import ConnectionPoint, Fact, Date
 
@@ -16,11 +18,17 @@ class Forex(Dataset):
         schema_name = 'forex'
 
     def data(self):
-        return [{'min': '1.0019', 'max': '1.0026', 'volume': '140', 'time_dt': '40485', 'time': '04-11-2010 00:48:01', 'time_tm': '2881', 'close': '1.0022', 'tm_time_id': '2881', 'open': '1.0023', 'id': 'a4aea808c4d9fc2a11771e7087177546'},
-                {'min': '1.0017', 'max': '1.0024', 'volume': '182', 'time_dt': '40485', 'time': '04-11-2010 00:49:01', 'time_tm': '2941', 'close': '1.0022', 'tm_time_id': '2941', 'open': '1.0024', 'id': 'f610d2a7e98bf4a2d1d40f3ba391effb'},
-                {'min': '1.0018', 'max': '1.0025', 'volume': '198', 'time_dt': '40485', 'time': '04-11-2010 00:50:01', 'time_tm': '3001', 'close': '1.0023', 'tm_time_id': '3001', 'open': '1.0022', 'id': 'a0c81959893ee94b19b8183a638e0ce6'}
-                ]
+        return [
+            {'min': 1.0019, 'max': 1.0026, 'volume': 140, 'time': datetime(2010, 11, 4, 0, 48, 1),
+             'close': 1.0022, 'open': 1.0023, 'id': 'a4aea808c4d9fc2a11771e7087177546'},
+            {'min': 1.0017, 'max': 1.0024, 'volume': 182, 'time': datetime(2010, 11, 4, 0, 49, 1),
+             'close': 1.0022, 'open': 1.0024, 'id': 'f610d2a7e98bf4a2d1d40f3ba391effb'},
+            {'min': 1.0018, 'max': 1.0025, 'volume': 198, 'time': datetime(2010, 11, 4, 0, 50, 1),
+             'close': 1.0023, 'open': 1.0022, 'id': 'a0c81959893ee94b19b8183a638e0ce6'}
+        ]
 
+dates = []
+datetimes = ['time']
 
 maql = """
 # THIS IS MAQL SCRIPT THAT GENERATES PROJECT LOGICAL MODEL.
@@ -178,9 +186,9 @@ SYNCHRONIZE {dataset.time.forex};"""
 
 
 data_csv = '''"id","time","volume","open","close","min","max","time_dt","time_tm","tm_time_id"
-"a4aea808c4d9fc2a11771e7087177546","04-11-2010 00:48:01","140","1.0023","1.0022","1.0019","1.0026","40485","2881","2881"
-"f610d2a7e98bf4a2d1d40f3ba391effb","04-11-2010 00:49:01","182","1.0024","1.0022","1.0017","1.0024","40485","2941","2941"
-"a0c81959893ee94b19b8183a638e0ce6","04-11-2010 00:50:01","198","1.0022","1.0023","1.0018","1.0025","40485","3001","3001"
+"a4aea808c4d9fc2a11771e7087177546","2010-11-04 00:48:01","140","1.0023","1.0022","1.0019","1.0026","40485","2881","2881"
+"f610d2a7e98bf4a2d1d40f3ba391effb","2010-11-04 00:49:01","182","1.0024","1.0022","1.0017","1.0024","40485","2941","2941"
+"a0c81959893ee94b19b8183a638e0ce6","2010-11-04 00:50:01","198","1.0022","1.0023","1.0018","1.0025","40485","3001","3001"
 '''
 
 sli_manifest = {"dataSetSLIManifest": {

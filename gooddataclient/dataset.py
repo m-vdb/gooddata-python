@@ -50,7 +50,12 @@ class Dataset(object):
         columns = []
         for name, column in self.get_class_members():
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
-            columns.append(column)
+            # need to mark the labels referencing
+            # connection points, they are different
+            if isinstance(column, Label) and \
+               isinstance(getattr(self, column.reference), ConnectionPoint):
+                column.references_cp = True
+            columns.append((name, column))
         return columns
 
     def get_datasets_metadata(self):
@@ -65,11 +70,10 @@ class Dataset(object):
         for dataset in datasets:
             if dataset['meta']['title'] == name:
                 return dataset
-        err_json = {
-            'sets': datasets,
-            'project_name': name
-        }
-        raise DataSetNotFoundError('DataSet %s not found' % name, err_json)
+        raise DataSetNotFoundError(
+            'DataSet %(dataset)s not found', sets=datasets,
+            project_name=name, dataset=name
+        )
 
     def delete(self, name):
         dataset = self.get_metadata(name)
@@ -79,13 +83,28 @@ class Dataset(object):
         raise NotImplementedError
 
     def get_date_dimension(self):
-        for column in self.get_columns():
+        #support several date dimensions
+        for _, column in self.get_columns():
             if isinstance(column, Date):
-                return column
+                yield column
+
+    def get_datetime_column_names(self):
+        """
+        Get the list of date and datetime columns, and return both lists.
+        """
+        dates = []
+        datetimes = []
+        for name, column in self.get_columns():
+            if isinstance(column, Date):
+                if column.datetime:
+                    datetimes.append(name)
+                else:
+                    dates.append(name)
+
+        return dates, datetimes
 
     def create(self):
-        date_dimension = self.get_date_dimension()
-        if date_dimension:
+        for date_dimension in self.get_date_dimension():
             DateDimension(self.project).create(name=date_dimension.schemaReference,
                                                include_time=date_dimension.datetime)
         self.project.execute_maql(self.get_maql())
@@ -95,13 +114,18 @@ class Dataset(object):
             self.get_metadata(self.schema_name)
         except DataSetNotFoundError:
             self.create()
-        dir_name = self.connection.webdav.upload(self.data(*args, **kwargs), self.get_sli_manifest())
+
+        dates, datetimes = self.get_datetime_column_names()
+        dir_name = self.connection.webdav.upload(
+            self.data(*args, **kwargs), self.get_sli_manifest(),
+            dates, datetimes
+        )
         self.project.integrate_uploaded_data(dir_name)
         self.connection.webdav.delete(dir_name)
 
     def get_folders(self):
         attribute_folders, fact_folders = [], []
-        for column in self.get_columns():
+        for _, column in self.get_columns():
             if column.folder:
                 if isinstance(column, (Attribute, Label, ConnectionPoint, Reference)):
                     if (column.folder, column.folder_title) not in attribute_folders:
@@ -117,7 +141,7 @@ class Dataset(object):
         See populateColumnsFromSchema in AbstractConnector.java
         '''
         parts = []
-        for column in self.get_columns():
+        for _, column in self.get_columns():
             parts.extend(column.get_sli_manifest_part())
 
         return {"dataSetSLIManifest": {"parts": parts,
@@ -154,26 +178,26 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
 
         # Append the attributes, ConnectionPoint, and Date that doesn't have schemaReference
         maql.append('# CREATE ATTRIBUTES.')
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, (Attribute, ConnectionPoint))\
                 or (isinstance(column, Date) and not column.schemaReference):
                 maql.append(column.get_maql())
 
         # Append the facts and date facts
         maql.append('# CREATE FACTS AND DATE FACTS')
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, Fact):
                 maql.append(column.get_maql())
 
         # Append the references
         maql.append('# CREATE REFERENCES')
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, Reference):
                 maql.append(column.get_maql())
 
         # Append the labels and set a default one
         default_set = False
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, Label):
                 maql.append(column.get_maql())
                 if not default_set:
@@ -181,7 +205,7 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
                     default_set = True
 
         cp = False
-        for column in column_list:
+        for _, column in column_list:
             if isinstance(column, ConnectionPoint):
                 cp = True
                 maql.append('# ADD LABEL TO CONNECTION POINT')
@@ -236,17 +260,10 @@ class DateDimension(object):
         A function to create the date dimension. Before executing the MAQL,
         it checks if the date dimension already exists.
         """
-        if name and self.date_exists(name):
-            err_json = {
-                'date_name': name,
-                'include_time': include_time,
-            }
-            err_msg = 'Date dimension already exists : %(date_name)s' % err_json
-            raise MaqlValidationFailed(err_msg, err_json)
-
-        self.project.execute_maql(self.get_maql(name, include_time))
-        if include_time:
-            self.upload_time(name)
+        if not name or (name and not self.date_exists(name)):
+            self.project.execute_maql(self.get_maql(name, include_time))
+            if include_time:
+                self.upload_time(name)
         return self
 
     def date_exists(self, name):
@@ -259,12 +276,11 @@ class DateDimension(object):
             response = self.connection.get(self.DATASETS_URI % self.project.id)
             response.raise_for_status()
         except HTTPError, err:
-            err_json = {
-                'status_code': err.response.status_code,
-                'reponse': err.response,
-            }
-            err_msg = 'Could not check if date exists: %(status_code)s' % err_json
-            raise MaqlValidationFailed(err_msg, err_json)
+            err_msg = 'Could not check if date exists: %(status_code)s'
+            raise MaqlValidationFailed(
+                err_msg, response=err.response,
+                status_code=err.response.status_code
+            )
         else:
             try:
                 sets = response.json()['dataSetsInfo']['sets']

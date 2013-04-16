@@ -17,6 +17,10 @@ class Column(object):
         self.dataType = dataType
         self.datetime = datetime
         self.format = format
+        # an attribute useful for labels,
+        # to now if they references a connection
+        # point
+        self.references_cp = False
 
     def get_schema_values(self):
         values = []
@@ -31,9 +35,11 @@ class Column(object):
 
     @property
     def identifier(self):
-        return self.IDENTIFIER % {
+        identifier = self.IDENTIFIER if not self.references_cp else self.IDENTIFIER_CP
+        return identifier % {
             'dataset': self.schema_name,
             'name': self.name,
+            'reference': self.reference,
         }
 
     def get_sli_manifest_part(self):
@@ -91,11 +97,12 @@ class Attribute(Column):
                         'name': self.name,
                     })
 
-        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "City") AS {%(identifier)s};'
+        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s") AS {%(identifier)s};'
                     % {
                         'dataset': self.schema_name,
                         'name': self.name,
                         'identifier': self.identifier,
+                        'title': self.title
                     })
 
         # change the datatype if needed
@@ -342,7 +349,8 @@ class Reference(Column):
 class Label(Column):
 
     ldmType = 'LABEL'
-    IDENTIFIER = 'f_%(dataset)s.nm_%(name)s'
+    IDENTIFIER = 'd_%(dataset)s_%(reference)s.nm_%(name)s'
+    IDENTIFIER_CP = 'f_%(dataset)s.nm_%(name)s'
 
     def get_maql(self):
         maql = []

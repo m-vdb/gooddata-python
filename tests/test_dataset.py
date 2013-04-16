@@ -3,8 +3,8 @@ import unittest
 
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
-from gooddataclient.dataset import DateDimension
-from gooddataclient.exceptions import MaqlValidationFailed
+from gooddataclient.dataset import DateDimension, Dataset
+from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
 from tests.credentials import password, username, project_id, gd_token
 from tests.test_project import TEST_PROJECT_NAME
@@ -17,7 +17,6 @@ class TestDataset(unittest.TestCase):
         self.connection = Connection(username, password)
 
         if gd_token:
-            delete_projects_by_name(self.connection, TEST_PROJECT_NAME)
             self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
         else:
             self.project = Project(self.connection).load(id=project_id)
@@ -58,6 +57,15 @@ class TestDataset(unittest.TestCase):
             dataset = ExampleDataset(self.project)
             sli_manifest = dataset.get_sli_manifest()
             self.assertIsInstance(sli_manifest, dict)
+
+    def test_exceptions(self):
+
+        class DummyDataset(Dataset):
+            pass
+
+        dataset = DummyDataset(self.project)
+        self.assertRaises(DataSetNotFoundError, dataset.get_metadata, 'dummy_dataset')
+        self.assertRaises(NotImplementedError, dataset.data)
 
 
 if __name__ == '__main__':
