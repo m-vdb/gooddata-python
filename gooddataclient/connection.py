@@ -91,8 +91,10 @@ class Webdav(Connection):
         self.username = username
         self.password = password
 
-    def upload(self, data, sli_manifest, dates=[], datetimes=[],
-               keep_csv=False, csv_file=None, no_upload=False):
+    def upload(
+        self, data, sli_manifest, dates=[], datetimes=[],
+        keep_csv=False, csv_file=None, no_upload=False
+    ):
         '''Create zip file with data in csv format and manifest file, then create
         directory in webdav and upload the zip file there.
 

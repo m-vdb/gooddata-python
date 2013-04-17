@@ -80,8 +80,9 @@ def write_tmp_zipfile(files):
     return filename
 
 
-def create_archive(data, sli_manifest, dates, datetimes,
-                   keep_csv=False, csv_file=None):
+def create_archive(
+    data, sli_manifest, dates, datetimes, keep_csv=False, csv_file=None
+):
     """
     Zip the data and sli_manifest files to an archive.
     Remember to os.remove(filename) after use.
