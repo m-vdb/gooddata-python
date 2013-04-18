@@ -92,7 +92,7 @@ def csv_encode_dict(dict_data):
 def csv_decode(val):
     val = val.decode('utf-8')
 
-    if val == NULL:
+    if val == NULL or not val:
         return None
     if val == BOOL_TRUE:
         return True
