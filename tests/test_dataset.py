@@ -1,5 +1,6 @@
 import sys
 import unittest
+import os
 
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
@@ -57,6 +58,16 @@ class TestDataset(unittest.TestCase):
             dataset = ExampleDataset(self.project)
             sli_manifest = dataset.get_sli_manifest()
             self.assertIsInstance(sli_manifest, dict)
+
+    def test_no_upload(self):
+        csv_file = os.path.join(os.path.abspath('./'), 'tmp.csv')
+        for (example, ExampleDataset) in examples.examples:
+            dataset = ExampleDataset(self.project)
+            dataset.upload(
+                no_upload=True, keep_csv=True,
+                csv_file=csv_file
+            )
+            os.remove(csv_file)
 
     def test_exceptions(self):
 

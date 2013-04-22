@@ -109,19 +109,32 @@ class Dataset(object):
                                                include_time=date_dimension.datetime)
         self.project.execute_maql(self.get_maql())
 
-    def upload(self, *args, **kwargs):
-        try:
-            self.get_metadata(self.schema_name)
-        except DataSetNotFoundError:
-            self.create()
+    def upload(self, keep_csv=False, csv_file=None,
+               no_upload=False, *args, **kwargs):
+        """
+        A function to upload dataset data. It tries to
+        call the data() method of the dataset to retrive
+        data. If `no_upload` is set to True, no dataset is
+        created nor uploaded on the project.
+
+        If `keep_csv` is set to True, a csv dump is kept, in
+        the file given by `csv_file`.
+        """
+        if not no_upload:
+            try:
+                self.get_metadata(self.schema_name)
+            except DataSetNotFoundError:
+                self.create()
 
         dates, datetimes = self.get_datetime_column_names()
         dir_name = self.connection.webdav.upload(
             self.data(*args, **kwargs), self.get_sli_manifest(),
-            dates, datetimes
+            dates, datetimes, keep_csv, csv_file, no_upload
         )
-        self.project.integrate_uploaded_data(dir_name)
-        self.connection.webdav.delete(dir_name)
+
+        if not no_upload:
+            self.project.integrate_uploaded_data(dir_name)
+            self.connection.webdav.delete(dir_name)
 
     def get_folders(self):
         attribute_folders, fact_folders = [], []

@@ -37,6 +37,22 @@ class TestArchiver(unittest.TestCase):
             zip_file.close()
             os.remove(filename)
 
+    def test_keep_csv(self):
+        csv_file = os.path.join(os.path.abspath('./'), 'tmp.csv')
+        for (example, ExampleDataset) in examples.examples:
+            filename = create_archive(
+                example.data_csv, example.sli_manifest, [], [],
+                keep_csv=True, csv_file=csv_file
+            )
+            with open(csv_file, 'r') as f:
+                content = f.read()
+            os.remove(csv_file)
+            self.assertListEqual(csv_to_list(example.data_csv), csv_to_list(content))
+            self.assertRaises(
+                TypeError, create_archive, example.data_csv,
+                example.sli_manifest, [], [], keep_csv=True
+            )
+
 
 if __name__ == '__main__':
     args = get_parser().parse_args()

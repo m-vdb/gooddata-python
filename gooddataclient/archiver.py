@@ -3,6 +3,7 @@ import csv
 from datetime import timedelta, datetime
 import hashlib
 import os
+import shutil
 from tempfile import mkstemp
 from zipfile import ZipFile
 
@@ -65,9 +66,9 @@ def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
 def write_tmp_zipfile(files):
     '''Zip files into a single file.
     Remember to os.remove(filename) after use.
-    
+
     @param files: list of tuples (path_to_the_file, name_of_the_file)
-    
+
     return filename of the created temporary zip file
     '''
     fp, filename = mkstemp()
@@ -79,7 +80,9 @@ def write_tmp_zipfile(files):
     return filename
 
 
-def create_archive(data, sli_manifest, dates, datetimes):
+def create_archive(
+    data, sli_manifest, dates, datetimes, keep_csv=False, csv_file=None
+):
     """
     Zip the data and sli_manifest files to an archive.
     Remember to os.remove(filename) after use.
@@ -104,7 +107,13 @@ def create_archive(data, sli_manifest, dates, datetimes):
         (data_path, CSV_DATA_FILENAME),
         (sli_manifest_path, DLI_MANIFEST_FILENAME)
     ))
-    os.remove(data_path)
+
+    if keep_csv:
+        if not csv_file:
+            raise TypeError('Keep csv option with no csv file path')
+        shutil.move(data_path, csv_file)
+    else:
+        os.remove(data_path)
     os.remove(sli_manifest_path)
     return archive
 
@@ -122,3 +131,15 @@ def csv_to_list(data_csv):
         line = csv_decode_dict(line)
         data_list.append(line)
     return data_list
+
+
+def csv_to_iterator(data_csv):
+    """
+    Create a generator from CSV string.
+
+    @param data_csv: CSV in a string
+    """
+    reader = csv.DictReader(data_csv.strip().split('\n'))
+
+    for line in reader:
+        yield csv_decode_dict(line)
