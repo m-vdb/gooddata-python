@@ -24,7 +24,7 @@ class Column(object):
 
     def get_schema_values(self):
         values = []
-        for key in ('name', 'title', 'folder', 'reference', 'schemaReference',
+        for key in ('name', 'title', 'folder', 'ldmType', 'reference', 'schemaReference',
                     'dataType', 'datetime', 'format'):
             value = getattr(self, key)
             if value:
