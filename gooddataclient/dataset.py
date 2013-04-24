@@ -10,6 +10,7 @@ from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
                                    Label, Reference, Fact
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
+from gooddataclient.schema.maql import SYNCHRONIZE
 
 logger = logging.getLogger("gooddataclient")
 
@@ -26,6 +27,12 @@ class Dataset(object):
         column_order = None
         schema_name = None
         project_name = None
+
+    @classmethod
+    def get_synchronize_statement(cls, schema_name):
+        return SYNCHRONIZE % {
+            'schema_name': schema_name
+        }
 
     @property
     def schema_name(self):
@@ -232,9 +239,9 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
             maql.append('ALTER DATASET {dataset.%s} ADD {attr.%s.factsof};'
                         % (to_identifier(self.schema_name), to_identifier(self.schema_name)))
 
-        maql.append("""# SYNCHRONIZE THE STORAGE AND DATA LOADING INTERFACES WITH THE NEW LOGICAL MODEL
-SYNCHRONIZE {dataset.%s};
-""" % to_identifier(self.schema_name))
+        maql.append(SYNCHRONIZE % {
+            'schema_name': to_identifier(self.schema_name)
+        })
 
         return '\n'.join(maql)
 

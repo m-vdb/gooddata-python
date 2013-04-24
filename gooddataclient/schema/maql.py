@@ -1,4 +1,6 @@
 
+SYNCHRONIZE = 'SYNCHRONIZE {dataset.%(schema_name)s};\n'
+
 ###################
 # Column creation #
 ###################
