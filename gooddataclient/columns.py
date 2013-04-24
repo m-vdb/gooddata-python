@@ -1,3 +1,10 @@
+from gooddataclient.schema.maql import (
+    ATTRIBUTE_CREATE, ATTRIBUTE_DATATYPE,
+    CP_CREATE, CP_DATATYPE, CP_LABEL,
+    FACT_CREATE, FACT_DATATYPE, DATE_CREATE,
+    TIME_CREATE, REFERENCE_CREATE, LABEL_CREATE,
+    LABEL_DEFAULT, LABEL_DATATYPE, HYPERLINK_CREATE
+)
 from gooddataclient.text import to_identifier, to_title
 
 
@@ -6,6 +13,8 @@ class Column(object):
     ldmType = None
     IDENTIFIER = ''
     referenceKey = False
+    TEMPLATE_CREATE = None
+    TEMPLATE_DATATYPE = None
 
     def __init__(self, title, folder=None, reference=None,
                  schemaReference=None, dataType=None, datetime=False, format=None):
@@ -18,8 +27,7 @@ class Column(object):
         self.datetime = datetime
         self.format = format
         # an attribute useful for labels,
-        # to now if they references a connection
-        # point
+        # to now if they references a connection point
         self.references_cp = False
 
     def get_schema_values(self):
@@ -73,48 +81,42 @@ class Column(object):
         self.name = name
         self.schema_name = schema_name
 
-# TODO : merge Attribute and ConnectionPoint asap
+    def get_maql(self, schema_name=None, name=None):
+        # this is useful for columns that are not embedded in datasets,
+        # like in migrations
+        if schema_name and name:
+            self.set_name_and_schema(name, schema_name)
+
+        maql = self.TEMPLATE_CREATE
+
+        # Altering data type if needed
+        if self.dataType and self.TEMPLATE_DATATYPE:
+            maql = maql + self.TEMPLATE_DATATYPE
+
+        # Adding the time in the case of a date
+        # with datetime set to True
+        if isinstance(self, Date) and self.datetime:
+            maql = maql + self.time.get_maql(name, schema_name)
+
+        return maql % {
+            'dataset': self.schema_name,
+            'name': self.name,
+            'title': self.title,
+            'folder': self.folder_statement,
+            'identifier': self.identifier,
+            'data_type': self.dataType,
+            'schema_ref': self.schemaReference,
+            'reference': self.reference
+        }
+
+
 class Attribute(Column):
 
     ldmType = 'ATTRIBUTE'
     IDENTIFIER = 'd_%(dataset)s_%(name)s.nm_%(name)s'
+    TEMPLATE_CREATE = ATTRIBUTE_CREATE
+    TEMPLATE_DATATYPE = ATTRIBUTE_DATATYPE
     referenceKey = True
-
-    def get_maql(self):
-        maql = []
-        # create the attribute
-        maql.append('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS KEYS {d_%(dataset)s_%(name)s.id} FULLSET, {f_%(dataset)s.%(name)s_id};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'title': self.title,
-                        'folder': self.folder_statement,
-                    })
-        # add it to the dataset
-        maql.append('ALTER DATASET {dataset.%(dataset)s} ADD {attr.%(dataset)s.%(name)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                    })
-
-        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s") AS {%(identifier)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'identifier': self.identifier,
-                        'title': self.title
-                    })
-
-        # change the datatype if needed
-        if self.dataType:
-            data_type = 'VARCHAR(32)' if self.dataType == 'IDENTITY' else self.dataType
-            maql.append('ALTER DATATYPE {%(identifier)s} %(data_type)s;'
-                        % {
-                            'identifier': self.identifier,
-                            'data_type': data_type,
-                        })
-
-        return '\n'.join(maql)
 
     @property
     def folder_statement(self):
@@ -130,82 +132,24 @@ class ConnectionPoint(Attribute):
 
     ldmType = 'CONNECTION_POINT'
     IDENTIFIER = 'f_%(dataset)s.nm_%(name)s'
-
-    def get_maql(self):
-        maql = []
-        # create the attribute
-        maql.append('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS KEYS {f_%(dataset)s.id} FULLSET;'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'title': self.title,
-                        'folder': self.folder_statement,
-                    })
-        # add it to the dataset
-        maql.append('ALTER DATASET {dataset.%(dataset)s} ADD {attr.%(dataset)s.%(name)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                    })
-        # change the datatype if needed
-
-        #TODO : this will not work
-        if self.dataType:
-            data_type = 'VARCHAR(32)' if self.dataType == 'IDENTITY' else self.dataType
-            maql.append('ALTER DATATYPE {%(identifier)s} %(data_type)s;'
-                        % {
-                            'identifier': self.identifier,
-                            'data_type': data_type,
-                        })
-        else:
-            maql.append('')
-        return '\n'.join(maql)
+    TEMPLATE_CREATE = CP_CREATE
+    TEMPLATE_DATATYPE = CP_DATATYPE
 
     def get_original_label_maql(self):
-        return 'ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} ADD LABELS {label.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s") AS {%(identifier)s};'\
-                % ({
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'title': self.title,
-                        'identifier': self.identifier,
-                    })
+        return CP_LABEL % {
+            'dataset': self.schema_name,
+            'name': self.name,
+            'title': self.title,
+            'identifier': self.identifier,
+        }
 
 
 class Fact(Column):
 
     ldmType = 'FACT'
     IDENTIFIER = 'f_%(dataset)s.f_%(name)s'
-
-    def get_maql(self):
-        maql = []
-        # create the fact
-        maql.append('CREATE FACT {fact.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s"%(folder)s) AS {%(identifier)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'title': self.title,
-                        'folder': self.folder_statement,
-                        'identifier': self.identifier,
-                    })
-        # add it to the dataset
-        maql.append('ALTER DATASET {dataset.%(dataset)s} ADD {fact.%(dataset)s.%(name)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                    })
-        # change the data type if needed
-        if self.dataType:
-            data_type = 'INT' if self.dataType == 'IDENTITY' else self.dataType
-            maql.append('ALTER DATATYPE {%(identifier)s} %(data_type)s;'
-                        % {
-                            'dataset': self.schema_name,
-                            'name': self.name,
-                            'data_type': data_type,
-                            'identifier': self.identifier,
-                        })
-        else:
-            maql.append('')
-        return '\n'.join(maql)
+    TEMPLATE_CREATE = FACT_CREATE
+    TEMPLATE_DATATYPE = FACT_DATATYPE
 
     @property
     def folder_statement(self):
@@ -221,40 +165,12 @@ class Date(Fact):
 
     ldmType = 'DATE'
     referenceKey = True
+    TEMPLATE_CREATE = DATE_CREATE
 
     def __init__(self, **kwargs):
         super(Date, self).__init__(**kwargs)
         if self.datetime:
             self.time = Time(**kwargs)
-
-    def get_maql(self):
-        maql = []
-        # create the date attriibute
-        maql.append('CREATE FACT {dt.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s (Date)"%(folder)s) AS {f_%(dataset)s.dt_%(name)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'title': self.title,
-                        'folder': self.folder_statement,
-                    })
-        # append the date attribute to the dataset
-        maql.append('ALTER DATASET {dataset.%(dataset)s} ADD {dt.%(dataset)s.%(name)s};\n'\
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name
-                    })
-
-        # connect the date attribute to the date dimension
-        maql.append('# CONNECT THE DATE TO THE DATE DIMENSION')
-        maql.append('ALTER ATTRIBUTE {%(schema_ref)s.date} ADD KEYS {f_%(dataset)s.dt_%(name)s_id};\n'\
-                    % {
-                        'schema_ref': self.schemaReference,
-                        'dataset': self.schema_name,
-                        'name': self.name
-                    })
-        if self.datetime:
-            maql = maql + self.time.get_maql()
-        return '\n'.join(maql)
 
     def populates(self):
         return ["%s.date.mdyy" % self.schemaReference]
@@ -280,35 +196,10 @@ class Date(Fact):
 
 
 class Time(Fact):
-    def get_maql(self):
-        maql = []
 
-        # create the time attriibute
-        maql.append('CREATE FACT {tm.dt.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s (Time)"%(folder)s) AS {f_%(dataset)s.tm_%(name)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'title': self.title,
-                        'folder': self.folder_statement,
-                    })
-        # append the time attribute to the dataset
-        maql.append('ALTER DATASET {dataset.%(dataset)s} ADD {tm.dt.%(dataset)s.%(name)s};\n'
-                    % {
-                        'dataset': self.schema_name,
-                        'name': self.name
-                    })
+    TEMPLATE_CREATE = TIME_CREATE
+    TEMPLATE_DATATYPE = None
 
-
-        # connect the time attribute to the date dimension
-        maql.append('# CONNECT THE TIME TO THE TIME DIMENSION')
-        maql.append('ALTER ATTRIBUTE {attr.time.second.of.day.%(schema_ref)s} ADD KEYS {f_%(dataset)s.tm_%(name)s_id};\n'
-                    % {
-                        'schema_ref': self.schemaReference,
-                        'dataset': self.schema_name,
-                        'name': self.name
-                    })
-        return maql
-    
     def get_time_tm_column(self):
         name = '%s_tm' % self.name
         populates = 'tm.dt.%s.%s' % (to_identifier(self.schema_name), self.name)
@@ -327,20 +218,8 @@ class Reference(Column):
 
     ldmType = 'REFERENCE'
     IDENTIFIER = 'f_%(dataset)s.%(name)s_id'
+    TEMPLATE_CREATE = REFERENCE_CREATE
     referenceKey = True
-
-    def get_maql(self):
-        maql = []
-        maql.append('# CONNECT THE REFERENCE TO THE APPROPRIATE DIMENSION')
-        maql.append('ALTER ATTRIBUTE {attr.%(schema_ref)s.%(reference)s} ADD KEYS {%(identifier)s};\n'\
-                    % {
-                        'schema_ref': self.schemaReference,
-                        'reference': self.reference,
-                        'dataset': self.schema_name,
-                        'name': self.name,
-                        'identifier': self.identifier,
-                    })
-        return '\n'.join(maql)
 
     def populates(self):
         return ["label.%s.%s" % (self.schemaReference, self.reference)]
@@ -351,29 +230,15 @@ class Label(Column):
     ldmType = 'LABEL'
     IDENTIFIER = 'd_%(dataset)s_%(reference)s.nm_%(name)s'
     IDENTIFIER_CP = 'f_%(dataset)s.nm_%(name)s'
-
-    def get_maql(self):
-        maql = []
-        maql.append('# ADD LABELS')
-        maql.append('ALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} ADD LABELS {label.%(dataset)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s") AS {%(identifier)s};'
-                    % {
-                        'dataset': self.schema_name,
-                        'reference': self.reference,
-                        'name': self.name,
-                        'title': self.title,
-                        'identifier': self.identifier,
-                    })
-        # TODO: DATATYPE
-        maql.append('')
-        return '\n'.join(maql)
+    TEMPLATE_CREATE = LABEL_CREATE
+    TEMPLATE_DATATYPE = LABEL_DATATYPE
 
     def get_maql_default(self):
-        return 'ALTER ATTRIBUTE  {attr.%(dataset)s.%(reference)s} DEFAULT LABEL {label.%(dataset)s.%(reference)s.%(name)s};'\
-                % {
-                    'dataset': self.schema_name,
-                    'reference': self.reference,
-                    'name': self.name,
-                }
+        return LABEL_DEFAULT % {
+            'dataset': self.schema_name,
+            'reference': self.reference,
+            'name': self.name,
+        }
 
     def populates(self):
         return ["label.%s.%s.%s" % (self.schema_name, self.reference, self.name)]
@@ -383,12 +248,12 @@ class HyperLink(Label):
 
     ldmType = 'HYPERLINK'
 
-    def get_maql(self):
-        maql = '\nALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} ALTER LABELS {label.%(dataset)s.%(reference)s.%(name)s} HYPERLINK;'\
-               % {
-                   'dataset': self.schema_name,
-                   'reference': self.reference,
-                   'name': self.name,
-                   'title': self.title,
-               }
-        return super(HyperLink, self).get_maql() + maql
+    def get_maql(self, schema_name=None, name=None):
+        maql = super(HyperLink, self).get_maql(schema_name, name)
+
+        return maql + HYPERLINK_CREATE % {
+            'dataset': self.schema_name,
+            'reference': self.reference,
+            'name': self.name,
+            'title': self.title,
+        }
