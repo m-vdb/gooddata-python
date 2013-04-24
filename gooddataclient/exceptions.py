@@ -45,5 +45,9 @@ class GetSLIManifestFailed(GoodDataClientError):
     pass
 
 
+class MigrationFailed(GoodDataClientError):
+    pass
+
+
 def get_api_msg(err_json):
     return err_json['message'] % tuple(err_json['parameters'])
