@@ -1,9 +1,12 @@
 from gooddataclient.schema.maql import (
+    #creation
     ATTRIBUTE_CREATE, ATTRIBUTE_DATATYPE,
     CP_CREATE, CP_DATATYPE, CP_LABEL,
     FACT_CREATE, FACT_DATATYPE, DATE_CREATE,
     TIME_CREATE, REFERENCE_CREATE, LABEL_CREATE,
-    LABEL_DEFAULT, LABEL_DATATYPE, HYPERLINK_CREATE
+    LABEL_DEFAULT, LABEL_DATATYPE, HYPERLINK_CREATE,
+    #deletion
+    FACT_DROP, ATTRIBUTE_DROP
 )
 from gooddataclient.text import to_identifier, to_title
 
@@ -15,6 +18,7 @@ class Column(object):
     referenceKey = False
     TEMPLATE_CREATE = None
     TEMPLATE_DATATYPE = None
+    TEMPLATE_DROP = None
 
     def __init__(self, title, folder=None, reference=None,
                  schemaReference=None, dataType=None, datetime=False, format=None):
@@ -109,6 +113,12 @@ class Column(object):
             'reference': self.reference
         }
 
+    def get_drop_maql(self, schema_name, name):
+        return self.TEMPLATE_DROP % {
+            'dataset': shema_name,
+            'name': name,
+        }
+
 
 class Attribute(Column):
 
@@ -116,6 +126,7 @@ class Attribute(Column):
     IDENTIFIER = 'd_%(dataset)s_%(name)s.nm_%(name)s'
     TEMPLATE_CREATE = ATTRIBUTE_CREATE
     TEMPLATE_DATATYPE = ATTRIBUTE_DATATYPE
+    TEMPLATE_DROP = ATTRIBUTE_DROP
     referenceKey = True
 
     @property
@@ -150,6 +161,7 @@ class Fact(Column):
     IDENTIFIER = 'f_%(dataset)s.f_%(name)s'
     TEMPLATE_CREATE = FACT_CREATE
     TEMPLATE_DATATYPE = FACT_DATATYPE
+    TEMPLATE_DROP = FACT_DROP
 
     @property
     def folder_statement(self):
