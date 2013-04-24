@@ -2,7 +2,7 @@ import sys
 import unittest
 from xml.dom.minidom import parseString
 
-from gooddataclient.schema import get_xml_schema
+from gooddataclient.schema.utils import get_xml_schema
 from gooddataclient.project import Project
 
 from tests import logger, examples, get_parser
