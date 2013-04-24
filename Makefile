@@ -9,7 +9,7 @@ install:
 	@echo 'Installing packages...'
 	@(pip install -r requirements.txt)
 
-test: test_archiver test_text test_schema test_connection test_project test_dataset
+test: test_archiver test_text test_schema test_connection test_project test_dataset test_migration
 
 test_archiver:
 	@echo '-------------------'
@@ -28,6 +28,12 @@ test_connection:
 	@echo '-------------------'
 	@echo 'Executing test_connection'
 	@(PYTHONPATH=`pwd -P` python ${TEST_DIR}/test_connection.py --loglevel=${LOGLEVEL})
+
+test_migration:
+	@echo '-------------------'
+	@echo '-------------------'
+	@echo 'Executing test_migration'
+	@(PYTHONPATH=`pwd -P` python ${TEST_DIR}/test_migration.py --loglevel=${LOGLEVEL})
 
 test_project:
 	@echo '-------------------'
