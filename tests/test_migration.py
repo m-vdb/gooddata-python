@@ -5,6 +5,7 @@ import unittest
 from gooddataclient.columns import Attribute, Fact
 from gooddataclient.connection import Connection
 from gooddataclient.migration.actions import AddColumn, DeleteColumn
+from gooddataclient.migration.chain import MigrationChain
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.schema.maql import SYNCHRONIZE
 from gooddataclient.text import to_identifier
@@ -69,8 +70,22 @@ class TestMigration(unittest.TestCase):
     # def test_alter_column(self):
     #     pass
 
-    # def test_migration_one_dataset(self):
-    #     pass
+    def test_migration_one_dataset(self):
+        boss = Attribute(title='Boss', dataType='VARCHAR(50)', folder='Department')
+        number_of_windows = Fact(title='Nb of Windows', dataType='INT')
+        add1 = AddColumn(self.dataset.schema_name, 'boss', boss)
+        add2 = AddColumn(self.dataset.schema_name, 'number_of_windows', number_of_windows)
+        del1 = DeleteColumn(self.dataset.schema_name, 'city', self.dataset.city)
+
+        class TestChain(MigrationChain):
+            chain = [add1, del1, add2]
+
+        test_chain = TestChain(self.project)
+        test_chain.execute()
+
+        self.assertTrue(self.dataset.has_attribute('boss'))
+        self.assertTrue(self.dataset.has_fact('number_of_windows'))
+        self.assertFalse(self.dataset.has_attribute('city'))
 
     # def test_migration_several_dataset(self):
     #     pass

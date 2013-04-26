@@ -36,8 +36,8 @@ class MigrationChain(object):
         maql = ''
         target_datasets = set()
         for migration in self.chain:
-            maql = maql + migration.execute()
-            target_datasets.append(migration.schema_name)
+            maql = maql + migration.get_maql()
+            target_datasets.add(migration.schema_name)
 
         return self.add_synchronize(maql, target_datasets)
 
