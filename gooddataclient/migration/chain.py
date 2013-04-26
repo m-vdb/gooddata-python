@@ -54,6 +54,6 @@ class MigrationChain(object):
         #        and will need to synchronize the schemaReferences.
 
         for name in dataset_names:
-            maql = maql + Dataset.get_synchronize_statement(name)
+            maql = maql + Dataset.get_synchronize_statement(name, preserve=True)
 
         return maql
