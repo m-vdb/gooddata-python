@@ -1,5 +1,7 @@
 
 SYNCHRONIZE = 'SYNCHRONIZE {dataset.%(schema_name)s};\n'
+SYNCHRONIZE_PRESERVE = 'SYNCHRONIZE {dataset.%(schema_name)s} PRESERVE DATA;\n'
+ALTER_DATATYPE = 'ALTER DATATYPE {%(identifier)s} %(data_type)s;\n'
 
 ###################
 # Column creation #
@@ -14,14 +16,14 @@ ATTRIBUTE_CREATE = ('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} '
                     'VISUAL(TITLE "%(title)s") AS {%(identifier)s};\n')
 
 
-ATTRIBUTE_DATATYPE = 'ALTER DATATYPE {%(identifier)s} %(data_type)s;\n'
+ATTRIBUTE_DATATYPE = ALTER_DATATYPE
 
 CP_CREATE = ('CREATE ATTRIBUTE {attr.%(dataset)s.%(name)s} '
              'VISUAL(TITLE "%(title)s"%(folder)s) AS KEYS '
              '{f_%(dataset)s.id} FULLSET;\n'
              'ALTER DATASET {dataset.%(dataset)s} ADD {attr.%(dataset)s.%(name)s};\n')
 
-CP_DATATYPE = ATTRIBUTE_DATATYPE
+CP_DATATYPE = ALTER_DATATYPE
 
 CP_LABEL = ('ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} '
             'ADD LABELS {label.%(dataset)s.%(name)s} '
@@ -31,7 +33,7 @@ FACT_CREATE = ('CREATE FACT {fact.%(dataset)s.%(name)s} '
                'VISUAL(TITLE "%(title)s"%(folder)s) AS {%(identifier)s};\n'
                'ALTER DATASET {dataset.%(dataset)s} ADD {fact.%(dataset)s.%(name)s};\n')
 
-FACT_DATATYPE = ATTRIBUTE_DATATYPE
+FACT_DATATYPE = ALTER_DATATYPE
 
 DATE_CREATE = ('CREATE FACT {dt.%(dataset)s.%(name)s} '
                'VISUAL(TITLE "%(title)s (Date)"%(folder)s)AS {f_%(dataset)s.dt_%(name)s};\n'
@@ -61,7 +63,7 @@ LABEL_DEFAULT = ('ALTER ATTRIBUTE  {attr.%(dataset)s.%(reference)s} '
 HYPERLINK_CREATE = ('ALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} '
                     'ALTER LABELS {label.%(dataset)s.%(reference)s.%(name)s} HYPERLINK;\n')
 
-LABEL_DATATYPE = ATTRIBUTE_DATATYPE
+LABEL_DATATYPE = ALTER_DATATYPE
 
 ###################
 # Column deletion #
@@ -71,10 +73,22 @@ ATTRIBUTE_DROP = 'DROP IF EXISTS {attr.%(dataset)s.%(name)s} CASCADE;\n'
 
 FACT_DROP = 'DROP IF EXISTS {fact.%(dataset)s.%(name)s} CASCADE;\n'
 
-# TODO : drop the reference
-DATE_DROP = 'DROP IF EXISTS {dt.%(dataset)s.%(name)s};\n'
+DATE_DROP = ('DROP IF EXISTS {dt.%(dataset)s.%(name)s};\n'
+             'ALTER ATTRIBUTE {%(schema_ref)s.date} '
+             'DROP KEYS {f_%(dataset)s.dt_%(name)s_id};\n')
 
-# TODO : drop the reference
-TIME_DROP = 'DROP IF EXISTS {tm.dt.%(dataset)s.%(name)s};\n'
+TIME_DROP = ('DROP IF EXISTS {tm.dt.%(dataset)s.%(name)s};\n'
+             'ALTER ATTRIBUTE {attr.time.second.of.day.%(schema_ref)s} '
+             'DROP KEYS {f_%(dataset)s.tm_%(name)s_id};\n')
 
-# TODO : reference, label, hyperlink
+REFERENCE_DROP = 'ALTER ATTRIBUTE {attr.%(schema_ref)s.%(reference)s} DROP KEYS {%(identifier)s}\n;'
+
+LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} DROP LABELS {%(identifier)s};\n'
+
+#####################
+# Column alteration #
+#####################
+
+ATTRIBUTE_ALTER_TITLE = 'ALTER ATTRIBUTE {attr.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
+
+FACT_ALTER_TITLE = 'ALTER FACT {fact.%(dataset)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
