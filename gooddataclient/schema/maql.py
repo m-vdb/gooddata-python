@@ -67,9 +67,9 @@ LABEL_DATATYPE = ATTRIBUTE_DATATYPE
 # Column deletion #
 ###################
 
-ATTRIBUTE_DROP = 'DROP IF EXISTS {attr.%(dataset)s.%(name)s};\n'
+ATTRIBUTE_DROP = 'DROP IF EXISTS {attr.%(dataset)s.%(name)s} CASCADE;\n'
 
-FACT_DROP = 'DROP IF EXISTS {fact.%(dataset)s.%(name)s};\n'
+FACT_DROP = 'DROP IF EXISTS {fact.%(dataset)s.%(name)s} CASCADE;\n'
 
 # TODO : drop the reference
 DATE_DROP = 'DROP IF EXISTS {dt.%(dataset)s.%(name)s};\n'

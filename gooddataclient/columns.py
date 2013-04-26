@@ -19,6 +19,7 @@ class Column(object):
     TEMPLATE_CREATE = None
     TEMPLATE_DATATYPE = None
     TEMPLATE_DROP = None
+    folder_statement = ''
 
     def __init__(self, title, folder=None, reference=None,
                  schemaReference=None, dataType=None, datetime=False, format=None):
@@ -115,7 +116,7 @@ class Column(object):
 
     def get_drop_maql(self, schema_name, name):
         return self.TEMPLATE_DROP % {
-            'dataset': shema_name,
+            'dataset': schema_name,
             'name': name,
         }
 
