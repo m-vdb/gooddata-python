@@ -173,12 +173,34 @@ class Fact(Column):
     def populates(self):
         return ["fact.%s.%s" % (self.schema_name, self.name)]
 
+    def get_alter_maql(self, schema_name, name, new_attributes):
+        self.set_name_and_schema(name, schema_name)
+        maql = ''
+
+        title = new_attributes.get('title', '')
+        data_type = new_attributes.get('dataType', '')
+
+        if title:
+            maql += FACT_ALTER_TITLE
+
+        if data_type:
+            maql += self.TEMPLATE_DATATYPE
+
+        return maql % {
+            'dataset': self.schema_name,
+            'name': self.name,
+            'title': title,
+            'data_type': data_type,
+            'identifier': self.identifier
+        }
+
 
 class Date(Fact):
 
     ldmType = 'DATE'
     referenceKey = True
     TEMPLATE_CREATE = DATE_CREATE
+    TEMPLATE_DROP = DATE_DROP
 
     def __init__(self, **kwargs):
         super(Date, self).__init__(**kwargs)
@@ -187,6 +209,11 @@ class Date(Fact):
 
     def populates(self):
         return ["%s.date.mdyy" % self.schemaReference]
+
+    def get_drop_maql(self, schema_name, name):
+        maql = self.time.get_drop_maql(schema_name, name) if self.datetime else ''
+
+        return maql + super(Date, self).get_drop_maql(schema_name, name)
 
     def get_date_dt_column(self):
          name = '%s_dt' % self.name
@@ -212,6 +239,7 @@ class Time(Fact):
 
     TEMPLATE_CREATE = TIME_CREATE
     TEMPLATE_DATATYPE = None
+    TEMPLATE_DROP = TIME_DROP
 
     def get_time_tm_column(self):
         name = '%s_tm' % self.name
@@ -232,6 +260,7 @@ class Reference(Column):
     ldmType = 'REFERENCE'
     IDENTIFIER = 'f_%(dataset)s.%(name)s_id'
     TEMPLATE_CREATE = REFERENCE_CREATE
+    TEMPLATE_DROP = REFERENCE_DROP
     referenceKey = True
 
     def populates(self):
@@ -245,6 +274,7 @@ class Label(Column):
     IDENTIFIER_CP = 'f_%(dataset)s.nm_%(name)s'
     TEMPLATE_CREATE = LABEL_CREATE
     TEMPLATE_DATATYPE = LABEL_DATATYPE
+    TEMPLATE_DROP = LABEL_DROP
 
     def get_maql_default(self):
         return LABEL_DEFAULT % {
