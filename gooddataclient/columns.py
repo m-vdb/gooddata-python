@@ -115,10 +115,30 @@ class Column(object):
         }
 
     def get_drop_maql(self, schema_name, name):
+        """
+        A function to retrieve the MAQL to drop a column.
+
+        :param schema_name:       the name of the dataset
+        :param name:              the name of the column
+        """
+        self.set_name_and_schema(name, schema_name)
         return self.TEMPLATE_DROP % {
-            'dataset': schema_name,
-            'name': name,
+            'dataset': self.schema_name,
+            'name': self.name,
+            'schema_ref': self.schemaReference,
+            'reference': self.reference,
+            'identifer': self.identifier,
         }
+
+    def get_alter_maql(self, schema_name, name, new_attributes):
+        """
+        A function to retrieve the MAQL to alter a column.
+
+        :param schema_name:       the name of the dataset
+        :param name:              the name of the column
+        :param new_attributes:    a dictionary of the new attributes
+        """
+        raise NotImplementedError
 
 
 class Attribute(Column):
@@ -138,6 +158,27 @@ class Attribute(Column):
 
     def populates(self):
         return ["label.%s.%s" % (self.schema_name, self.name)]
+
+    def get_alter_maql(self, schema_name, name, new_attributes):
+        self.set_name_and_schema(name, schema_name)
+        maql = ''
+
+        title = new_attributes.get('title', '')
+        data_type = new_attributes.get('dataType', '')
+
+        if title:
+            maql += ATTRIBUTE_ALTER_TITLE
+
+        if data_type:
+            maql += self.TEMPLATE_DATATYPE
+
+        return maql % {
+            'dataset': self.schema_name,
+            'name': self.name,
+            'title': title,
+            'data_type': data_type,
+            'identifier': self.identifier
+        }
 
 
 class ConnectionPoint(Attribute):
