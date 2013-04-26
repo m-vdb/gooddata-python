@@ -1,3 +1,6 @@
+from gooddataclient.columns import Label, HyperLink
+from gooddataclient.exceptions import MigrationFailed
+from gooddataclient.migration.utils import get_changed_attributes
 from gooddataclient.text import to_identifier
 
 
@@ -48,6 +51,54 @@ class DeleteColumn(Action):
 
 
 class AlterColumn(Action):
-    # alter cases: title, dataType (without changing LDM type)
-    # if changing the LDM type, I think it's equivalent to delete+add, appart from attribute -> ConnectionPoint
-    pass
+    # TODO: handle references here.
+    SIMPLE_ALTER = set(['title', 'dataType'])
+
+    def __init__(self, new_column, *args, **kwargs):
+        """
+        The AlterColumn takes an additional mandatory
+        argument which is the new format of the column,
+        as opposed to the old format (passed as the column
+        argument).
+
+        :param new_column: the Column object representing
+                           the column after migration.
+        """
+        super(AlterColumn, self).__init__(*args, **kwargs)
+        self.new_column = new_column
+
+    def get_maql(self):
+        new_attrs, old_attrs = get_changed_attributes(self.column.__dict__, self.new_column.__dict__)
+
+        # in the case of simple alteration
+        if set(new_attr.keys()).issubset(SIMPLE_ALTER):
+
+            # if strictly same columns
+            if isinstance(self.column, self.new_column.__class__) and \
+               isinstance(self.new_column, self.column.__class__):
+                return self.get_maql_same_columns(new_attrs)
+
+            # labels and hyperlinks are different
+            elif isinstance(self.column, Label) and isinstance(self.column, Label):
+                return self.get_maql_same_columns(new_attrs, hyperlink=True)
+
+        # FIXME : we need to be smarter than that, because some labels / hyperlink / references
+        #         migth be dropped...
+        # complex cases: equivalent to Delete + Add
+        maql_delete = DeleteColumn(self.schema_name, self.col_name, self.column).get_maql()
+        maql_add = AddColumn(self.schema_name, self.col_name, self.new_column).get_maql()
+
+        return maql_delete + maql_add
+
+    def get_maql_same_columns(self, new_attributes, hyperlink=False):
+        """
+        A function to get the MAQL to migrate two columns of the same type.
+        The new_attributes and old_attributes are dictionaries which
+        contains the keys that differ from one column to another.
+
+        :param new_attributes:    the new column keys that are different
+                                  from the old column keys.
+        :param hyperlink:         a boolean that says if we need to
+                                  handle the case of a hyperlink.
+        """
+        return self.column.get_alter_maql(self.schema_name, self.col_name, new_attributes, hyperlink)
