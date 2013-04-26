@@ -1,3 +1,4 @@
+from gooddataclient.text import to_identifier
 
 
 class Action(object):
@@ -18,11 +19,11 @@ class Action(object):
         self.col_name = col_name
         self.column = column
 
-    def execute(self):
+    def get_maql(self):
         """
         The method to execute the action
         """
-        return None
+        raise NotImplementedError
 
 
 class AddColumn(Action):
@@ -31,13 +32,22 @@ class AddColumn(Action):
     existing dataset.
     """
 
-    def execute(self):
-        return self.column.get_maql(self.schema_name, self.name)
+    def get_maql(self):
+        return self.column.get_maql(to_identifier(self.schema_name), self.col_name)
 
 
 class DeleteColumn(Action):
-    pass
+    """
+    The action used to delete a column from an
+    existing dataset.
+    """
+
+    def get_maql(self):
+        # FIXME : check that all labels are removed
+        return self.column.get_drop_maql(to_identifier(self.schema_name), self.col_name)
 
 
 class AlterColumn(Action):
+    # alter cases: title, dataType (without changing LDM type)
+    # if changing the LDM type, I think it's equivalent to delete+add, appart from attribute -> ConnectionPoint
     pass
