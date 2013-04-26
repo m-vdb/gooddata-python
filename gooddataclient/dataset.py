@@ -10,7 +10,8 @@ from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
                                    Label, Reference, Fact
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
-from gooddataclient.schema.maql import SYNCHRONIZE
+from gooddataclient.schema.maql import SYNCHRONIZE, SYNCHRONIZE_PRESERVE
+
 
 logger = logging.getLogger("gooddataclient")
 
@@ -29,7 +30,11 @@ class Dataset(object):
         project_name = None
 
     @classmethod
-    def get_synchronize_statement(cls, schema_name):
+    def get_synchronize_statement(cls, schema_name, preserve=False):
+        if preserve:
+            return SYNCHRONIZE_PRESERVE % {
+                'schema_name': schema_name
+            }
         return SYNCHRONIZE % {
             'schema_name': schema_name
         }
