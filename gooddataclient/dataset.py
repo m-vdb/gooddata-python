@@ -82,6 +82,59 @@ class Dataset(object):
             project_name=name, dataset=name
         )
 
+    def get_column_uris(self):
+        """
+        A function to query GD API and retieve
+        the list of attributes and facts of the dataset.
+        """
+        dataset_json = self.get_metadata(self.schema_name)
+        response = self.connection.get(uri=dataset_json['meta']['uri'])
+        content_json = response.json()['dataSet']['content']
+
+        return content_json['attributes'], content_json['facts']
+
+    def get_column_detail(self, uri):
+        """
+        A function to retrieve the details of a column,
+        given its uri.
+        """
+        column_json = self.connection.get(uri=uri).json()
+        try:
+            return column_json['attribute']
+        except KeyError:
+            return column_json['fact']
+
+    def has_column(self, col_name, attribute):
+        """
+        A function to check that a dataset has a specific column
+        (attribute or fact), saved on GoodData.
+
+        :param col_name:           the name of the column.
+        :param attribute:          a boolean that says if the column
+                                   to look for is an attribute.
+        """
+        attr_uris, fact_uris = self.get_column_uris()
+        col_uris = attr_uris if attribute else fact_uris
+        prefix_identifier = 'attr' if attribute else 'fact'
+
+        col_identifier = '%(prefix)s.%(dataset)s.%(col_name)s' % {
+            'prefix': prefix_identifier,
+            'dataset': to_identifier(self.schema_name),
+            'col_name': col_name,
+        }
+
+        for col_uri in col_uris:
+            col_json = self.get_column_detail(col_uri)
+            if col_json['meta']['identifier'] == col_identifier:
+                return True
+        return False
+
+    def has_attribute(self, attr_name):
+        return self.has_column(attr_name, attribute=True)
+
+    def has_fact(self, fact_name):
+        return self.has_column(fact_name, attribute=False)
+
     def delete(self, name):
         dataset = self.get_metadata(name)
         return self.connection.delete(uri=dataset['meta']['uri'])
