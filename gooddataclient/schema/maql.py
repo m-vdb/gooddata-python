@@ -73,17 +73,17 @@ ATTRIBUTE_DROP = 'DROP IF EXISTS {attr.%(dataset)s.%(name)s} CASCADE;\n'
 
 FACT_DROP = 'DROP IF EXISTS {fact.%(dataset)s.%(name)s} CASCADE;\n'
 
-DATE_DROP = ('DROP IF EXISTS {dt.%(dataset)s.%(name)s};\n'
+DATE_DROP = ('DROP IF EXISTS {dt.%(dataset)s.%(name)s} CASCADE;\n'
              'ALTER ATTRIBUTE {%(schema_ref)s.date} '
              'DROP KEYS {f_%(dataset)s.dt_%(name)s_id};\n')
 
-TIME_DROP = ('DROP IF EXISTS {tm.dt.%(dataset)s.%(name)s};\n'
+TIME_DROP = ('DROP IF EXISTS {tm.dt.%(dataset)s.%(name)s} CASCADE;\n'
              'ALTER ATTRIBUTE {attr.time.second.of.day.%(schema_ref)s} '
              'DROP KEYS {f_%(dataset)s.tm_%(name)s_id};\n')
 
 REFERENCE_DROP = 'ALTER ATTRIBUTE {attr.%(schema_ref)s.%(reference)s} DROP KEYS {%(identifier)s}\n;'
 
-LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} DROP LABELS {%(identifier)s};\n'
+LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(dataset)s.%(reference)s} DROP LABELS {label.%(dataset)s.%(reference)s.%(name)s};\n'
 
 #####################
 # Column alteration #
