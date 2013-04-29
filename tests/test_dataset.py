@@ -78,6 +78,11 @@ class TestDataset(unittest.TestCase):
         self.assertRaises(DataSetNotFoundError, dataset.get_metadata, 'dummy_dataset')
         self.assertRaises(NotImplementedError, dataset.data)
 
+    def test_has_properties(self):
+        # TODO: check has_fact, has_attribute, has_date, has_label
+        # see ANA-459
+        pass
+
 
 if __name__ == '__main__':
     args = get_parser().parse_args()
