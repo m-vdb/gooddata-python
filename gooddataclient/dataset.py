@@ -109,7 +109,7 @@ class Dataset(object):
         except KeyError:
             return column_json['fact']
 
-    def has_column(self, col_name, attribute):
+    def has_column(self, col_name, attribute=False, date=False):
         """
         A function to check that a dataset has a specific column
         (attribute or fact), saved on GoodData.
@@ -117,10 +117,16 @@ class Dataset(object):
         :param col_name:           the name of the column.
         :param attribute:          a boolean that says if the column
                                    to look for is an attribute.
+        :param date:               a boolean that says if the column
+                                   to look for is a date.
         """
         attr_uris, fact_uris = self.get_column_uris()
         col_uris = attr_uris if attribute else fact_uris
-        prefix_identifier = 'attr' if attribute else 'fact'
+        if date:
+            prefix_identifier = 'dt'
+            col_uris = fact_uris
+        else:
+            prefix_identifier = 'attr' if attribute else 'fact'
 
         col_identifier = '%(prefix)s.%(dataset)s.%(col_name)s' % {
             'prefix': prefix_identifier,
@@ -139,6 +145,25 @@ class Dataset(object):
 
     def has_fact(self, fact_name):
         return self.has_column(fact_name, attribute=False)
+
+    def has_date(self, date_name):
+        return self.has_column(date_name, date=True)
+
+    def has_label(self, label_name):
+        attr_uris, fact_uris = self.get_column_uris()
+        label_identifier_re = 'label.%(dataset)s.[a-zA-Z_].%(label_name)s' % {
+            'prefix': prefix_identifier,
+            'dataset': to_identifier(self.schema_name),
+            'label_name': label_name,
+        }
+
+        for col_uri in attr_uris + fact_uris:
+            col_json = get_column_detail(col_uri)
+            for display in col_json['content']['displayForms']:
+                if re.match(label_identifier_re, display['meta']['identifier']):
+                    return True
+
+        return False
 
     def delete(self, name):
         dataset = self.get_metadata(name)
