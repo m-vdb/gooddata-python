@@ -61,12 +61,11 @@ class DeleteColumn(Action):
     """
 
     def get_maql(self):
-        # FIXME : check that all labels are removed
         return self.column.get_drop_maql(to_identifier(self.schema_name), self.col_name)
 
 
+# TODO: this shouldn't be here, it will be treated in ANA-460
 class AlterColumn(Action):
-    # TODO: handle references here.
     SIMPLE_ALTER = set(['title', 'dataType'])
 
     def __init__(self, new_column, *args, **kwargs):

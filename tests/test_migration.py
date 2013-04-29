@@ -144,6 +144,24 @@ class TestMigration(unittest.TestCase):
 
         self.assertFalse(dataset.has_date('payday'))
 
+    def test_attr_delete_label_cascade(self):
+        work, Worker = examples.examples[1]
+        dataset = Worker(self.project)
+        dataset.hobby = Attribute(title='Hobby', folder='Worker', dataType='VARCHAR(40)')
+        dataset.style = Label(title='Life style', reference='hobby', dataType='VARCHAR(30)')
+        dataset.create()
+
+        del1 =DeleteColumn(dataset.schema_name, 'hobby', dataset.hobby)
+
+        class ComplexMigration(MigrationChain):
+            chain = [del1, ]
+
+        complex_migration = ComplexMigration(self.project)
+        complex_migration.execute()
+
+        self.assertFalse(dataset.has_attribute('hobby'))
+        self.assertFalse(dataset.has_label('style'))
+
 
 if __name__ == '__main__':
     args = get_parser().parse_args()
