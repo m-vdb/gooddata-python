@@ -1,4 +1,6 @@
 from gooddataclient.dataset import Dataset
+from gooddataclient.exceptions import MaqlExecutionFailed, MigrationFailed
+from gooddataclient.migration.actions import AddDate
 
 
 class MigrationChain(object):
@@ -13,12 +15,17 @@ class MigrationChain(object):
         :param project:  a Project instance
         """
         self.project = project
+        self.dates = []
 
     def execute(self):
         """
         A function to execute every atomic migration of the chain.
         """
         maql = self.get_maql()
+
+        # create the date dimentions if needed
+        for date in self.dates:
+            date.create_dimension(self.project)
 
         try:
             self.project.execute_maql(maql)
@@ -36,6 +43,8 @@ class MigrationChain(object):
         maql = ''
         target_datasets = set()
         for migration in self.chain:
+            if isinstance(migration, AddDate):
+                self.dates.append(migration)
             maql = maql + migration.get_maql()
             target_datasets.add(migration.schema_name)
 
