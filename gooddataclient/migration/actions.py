@@ -11,7 +11,7 @@ class Action(object):
     during a LDM migration.
     """
 
-    def __init__(self, schema_name, col_name, column):
+    def __init__(self, schema_name, col_name, column, label_references_cp=False):
         """
         Initialize the action to execute.
 
@@ -22,6 +22,7 @@ class Action(object):
         self.schema_name = schema_name
         self.col_name = col_name
         self.column = column
+        self.label_references_cp = label_references_cp
 
     def get_maql(self):
         """
@@ -37,7 +38,7 @@ class AddColumn(Action):
     """
 
     def get_maql(self):
-        return self.column.get_maql(to_identifier(self.schema_name), self.col_name)
+        return self.column.get_maql(to_identifier(self.schema_name), self.col_name, self.label_references_cp)
 
 
 class AddDate(AddColumn):
