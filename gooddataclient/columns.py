@@ -1,12 +1,15 @@
 from gooddataclient.schema.maql import (
-    #creation
+    # creation
     ATTRIBUTE_CREATE, ATTRIBUTE_DATATYPE,
     CP_CREATE, CP_DATATYPE, CP_LABEL,
     FACT_CREATE, FACT_DATATYPE, DATE_CREATE,
     TIME_CREATE, REFERENCE_CREATE, LABEL_CREATE,
     LABEL_DEFAULT, LABEL_DATATYPE, HYPERLINK_CREATE,
-    #deletion
-    FACT_DROP, ATTRIBUTE_DROP
+    # deletion
+    FACT_DROP, ATTRIBUTE_DROP, DATE_DROP, TIME_DROP,
+    REFERENCE_DROP, LABEL_DROP,
+    # alteration
+    ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE
 )
 from gooddataclient.text import to_identifier, to_title
 
