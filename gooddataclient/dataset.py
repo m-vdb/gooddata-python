@@ -1,6 +1,7 @@
 import os
 import logging
 import inspect
+import re
 
 from requests.exceptions import HTTPError
 
@@ -96,20 +97,24 @@ class Dataset(object):
         response = self.connection.get(uri=dataset_json['meta']['uri'])
         content_json = response.json()['dataSet']['content']
 
-        return content_json['attributes'], content_json['facts']
+        return content_json['attributes'], content_json['facts'], content_json['dataLoadingColumns']
 
-    def get_column_detail(self, uri):
+    def get_column_detail(self, uri, dlc=False):
         """
         A function to retrieve the details of a column,
         given its uri.
         """
         column_json = self.connection.get(uri=uri).json()
+
+        if dlc:
+            return column_json['dataLoadingColumn']
+
         try:
             return column_json['attribute']
         except KeyError:
             return column_json['fact']
 
-    def has_column(self, col_name, attribute=False, date=False):
+    def has_column(self, col_name, attribute=False, date=False, reference=False):
         """
         A function to check that a dataset has a specific column
         (attribute or fact), saved on GoodData.
@@ -119,23 +124,36 @@ class Dataset(object):
                                    to look for is an attribute.
         :param date:               a boolean that says if the column
                                    to look for is a date.
+        :param reference:          a boolean that says if the column
+                                   to look for is a reference.
         """
-        attr_uris, fact_uris = self.get_column_uris()
-        col_uris = attr_uris if attribute else fact_uris
-        if date:
-            prefix_identifier = 'dt'
-            col_uris = fact_uris
+        attr_uris, fact_uris, dlc_uris = self.get_column_uris()
+        if attribute:
+            col_uris = attr_uris
+        elif reference:
+            col_uris = dlc_uris
         else:
-            prefix_identifier = 'attr' if attribute else 'fact'
+            col_uris = fact_uris
+        suffix = ''
 
-        col_identifier = '%(prefix)s.%(dataset)s.%(col_name)s' % {
-            'prefix': prefix_identifier,
+        if date:
+            prefix = 'dt.'
+            col_uris = fact_uris
+        elif reference:
+            prefix = 'f_'
+            suffix = '_id'
+        else:
+            prefix = 'attr.' if attribute else 'fact.'
+
+        col_identifier = '%(prefix)s%(dataset)s.%(col_name)s%(suffix)s' % {
+            'prefix': prefix,
             'dataset': to_identifier(self.schema_name),
             'col_name': col_name,
+            'suffix': suffix,
         }
 
         for col_uri in col_uris:
-            col_json = self.get_column_detail(col_uri)
+            col_json = self.get_column_detail(col_uri, reference)
             if col_json['meta']['identifier'] == col_identifier:
                 return True
         return False
@@ -150,20 +168,22 @@ class Dataset(object):
         return self.has_column(date_name, date=True)
 
     def has_label(self, label_name):
-        attr_uris, fact_uris = self.get_column_uris()
-        label_identifier_re = 'label.%(dataset)s.[a-zA-Z_].%(label_name)s' % {
-            'prefix': prefix_identifier,
+        attr_uris, fact_uris, _ = self.get_column_uris()
+        label_identifier_re = 'label\.%(dataset)s\.[a-zA-Z_]+\.%(label_name)s' % {
             'dataset': to_identifier(self.schema_name),
             'label_name': label_name,
         }
 
         for col_uri in attr_uris + fact_uris:
-            col_json = get_column_detail(col_uri)
-            for display in col_json['content']['displayForms']:
+            col_json = self.get_column_detail(col_uri)
+            for display in col_json['content'].get('displayForms', []):
                 if re.match(label_identifier_re, display['meta']['identifier']):
                     return True
 
         return False
+
+    def has_reference(self, reference_name):
+        return self.has_column(reference_name, reference=True)
 
     def delete(self, name):
         dataset = self.get_metadata(name)
