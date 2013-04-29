@@ -2,9 +2,9 @@ from copy import copy
 import sys
 import unittest
 
-from gooddataclient.columns import Attribute, Fact
+from gooddataclient.columns import Attribute, Fact, Date, Label, Reference
 from gooddataclient.connection import Connection
-from gooddataclient.migration.actions import AddColumn, DeleteColumn
+from gooddataclient.migration.actions import AddColumn, AddDate, DeleteColumn
 from gooddataclient.migration.chain import MigrationChain
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.schema.maql import SYNCHRONIZE
@@ -12,6 +12,7 @@ from gooddataclient.text import to_identifier
 
 from tests import logger, get_parser, examples
 from tests.credentials import username, password, gd_token
+from tests.examples.country import Country
 from tests.test_project import TEST_PROJECT_NAME
 
 
@@ -48,7 +49,7 @@ class TestMigration(unittest.TestCase):
         self.dataset.data = self.dataset.added_data
         self.dataset.upload()
 
-    def test_delete_column(self):
+    def test_simple_delete_column(self):
         column = copy(self.dataset.city)
         del1 = DeleteColumn(self.dataset.schema_name, 'city', column)
 
@@ -67,9 +68,6 @@ class TestMigration(unittest.TestCase):
 
         self.assertTrue(self.dataset.has_attribute('city'))
 
-    # def test_alter_column(self):
-    #     pass
-
     def test_migration_one_dataset(self):
         boss = Attribute(title='Boss', dataType='VARCHAR(50)', folder='Department')
         number_of_windows = Fact(title='Nb of Windows', dataType='INT')
@@ -87,8 +85,64 @@ class TestMigration(unittest.TestCase):
         self.assertTrue(self.dataset.has_fact('number_of_windows'))
         self.assertFalse(self.dataset.has_attribute('city'))
 
-    # def test_migration_several_dataset(self):
-    #     pass
+    def test_complex_add_column(self):
+        # create a simple dataset to refrence
+        country_dataset = Country(self.project)
+        country_dataset.create()
+
+        shortname = Label(title='Short Name', reference='department')
+        created_at = Date(title='Created at', format='yyyy-MM-dd HH:mm:SS',
+                          schemaReference='created_at', datetime=True)
+        country = Reference(title='Country', reference='country', schemaReference='Country')
+
+        add1 = AddColumn(self.dataset.schema_name, 'country', country)
+        add2 = AddColumn(self.dataset.schema_name, 'shortname', shortname, label_references_cp=True)
+        add3 = AddDate(self.dataset.schema_name, 'created_at', created_at)
+
+        class ComplexMigration(MigrationChain):
+            chain = [add1, add2, add3]
+
+        complex_migration = ComplexMigration(self.project)
+        complex_migration.execute()
+
+        self.assertTrue(self.dataset.has_date('created_at'))
+        self.assertTrue(self.dataset.has_label('shortname'))
+        self.assertTrue(self.dataset.has_reference('country'))
+
+    def test_complex_delete_column(self):
+        worker, Worker = examples.examples[1]
+        dataset = Worker(self.project)
+        dataset.create()
+
+        # reference drop
+        del1 = DeleteColumn(dataset.schema_name, 'department', dataset.department)
+        # label drop
+        del2 = DeleteColumn(dataset.schema_name, 'lastname', dataset.lastname)
+
+        class ComplexMigration(MigrationChain):
+            chain = [del1, del2]
+
+        complex_migration = ComplexMigration(self.project)
+        complex_migration.execute()
+
+        self.assertFalse(dataset.has_label('lastname'))
+        self.assertFalse(dataset.has_reference('department'))
+
+        salary, Salary = examples.examples[2]
+        dataset = Salary(self.project)
+        dataset.payday = Date(
+            title='Pay Day', format='yyyy-MM-dd HH:mm:SS',
+            schemaReference='payment', folder='Salary', datetime=True
+        )
+        dataset.create()
+
+        # date drop
+        del3 = DeleteColumn(dataset.schema_name, 'payday', dataset.payday)
+
+        complex_migration.chain = [del3]
+        complex_migration.execute()
+
+        self.assertFalse(dataset.has_date('payday'))
 
 
 if __name__ == '__main__':

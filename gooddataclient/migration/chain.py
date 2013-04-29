@@ -59,7 +59,7 @@ class MigrationChain(object):
         :param maql:             the maql statements
         :param dataset_names:    the list of dataset names
         """
-        # FIXME: maybe referencies are not treated the same way,
+        # FIXME: maybe references are not treated the same way,
         #        and will need to synchronize the schemaReferences.
 
         for name in dataset_names:
