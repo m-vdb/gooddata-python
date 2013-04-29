@@ -1,4 +1,5 @@
 from gooddataclient.columns import Label, HyperLink
+from gooddataclient.dataset import DateDimension
 from gooddataclient.exceptions import MigrationFailed
 from gooddataclient.migration.utils import get_changed_attributes
 from gooddataclient.text import to_identifier
@@ -37,6 +38,19 @@ class AddColumn(Action):
 
     def get_maql(self):
         return self.column.get_maql(to_identifier(self.schema_name), self.col_name)
+
+
+class AddDate(AddColumn):
+    """
+    The action used to add a date to an
+    existing dataset. It creates the date
+    dimension.
+    """
+
+    def create_dimension(self, project):
+        DateDimension(project).create(
+            name=self.column.schemaReference, include_time=self.column.datetime
+        )
 
 
 class DeleteColumn(Action):
