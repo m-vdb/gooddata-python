@@ -89,11 +89,14 @@ class Column(object):
         self.name = name
         self.schema_name = schema_name
 
-    def get_maql(self, schema_name=None, name=None):
+    def get_maql(self, schema_name=None, name=None, label_references_cp=False):
         # this is useful for columns that are not embedded in datasets,
         # like in migrations
         if schema_name and name:
             self.set_name_and_schema(name, schema_name)
+        # useful in case we create a label that references a connection point
+        if label_references_cp:
+            self.references_cp = label_references_cp
 
         maql = self.TEMPLATE_CREATE
 
@@ -104,7 +107,7 @@ class Column(object):
         # Adding the time in the case of a date
         # with datetime set to True
         if isinstance(self, Date) and self.datetime:
-            maql = maql + self.time.get_maql(name, schema_name)
+            maql = maql + self.time.get_maql()
 
         return maql % {
             'dataset': self.schema_name,
@@ -130,7 +133,7 @@ class Column(object):
             'name': self.name,
             'schema_ref': self.schemaReference,
             'reference': self.reference,
-            'identifer': self.identifier,
+            'identifier': self.identifier,
         }
 
     def get_alter_maql(self, schema_name, name, new_attributes):
@@ -267,10 +270,10 @@ class Date(Fact):
     def get_sli_manifest_part(self):
         parts = super(Date, self).get_sli_manifest_part()
         parts.append(self.get_date_dt_column())
-        
+
         if self.datetime:
             parts.extend(self.time.get_sli_manifest_part())
-        
+
         return parts
 
     def set_name_and_schema(self, name, schema_name):
