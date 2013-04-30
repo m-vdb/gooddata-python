@@ -32,13 +32,9 @@ class Dataset(object):
 
     @classmethod
     def get_synchronize_statement(cls, schema_name, preserve=False):
-        if preserve:
-            return SYNCHRONIZE_PRESERVE % {
+        return (SYNCHRONIZE_PRESERVE if preserve else SYNCHRONIZE) % {
                 'schema_name': to_identifier(schema_name)
             }
-        return SYNCHRONIZE % {
-            'schema_name': to_identifier(schema_name)
-        }
 
     @property
     def schema_name(self):

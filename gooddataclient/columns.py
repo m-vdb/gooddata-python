@@ -35,7 +35,7 @@ class Column(object):
         self.datetime = datetime
         self.format = format
         # an attribute useful for labels,
-        # to now if they references a connection point
+        # to know if they reference a connection point
         self.references_cp = False
 
     def get_schema_values(self):
@@ -102,12 +102,12 @@ class Column(object):
 
         # Altering data type if needed
         if self.dataType and self.TEMPLATE_DATATYPE:
-            maql = maql + self.TEMPLATE_DATATYPE
+            maql += self.TEMPLATE_DATATYPE
 
         # Adding the time in the case of a date
         # with datetime set to True
         if isinstance(self, Date) and self.datetime:
-            maql = maql + self.time.get_maql()
+            maql += self.time.get_maql()
 
         return maql % {
             'dataset': self.schema_name,

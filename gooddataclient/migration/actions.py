@@ -97,7 +97,7 @@ class AlterColumn(Action):
                 return self.get_maql_same_columns(new_attrs, hyperlink=True)
 
         # FIXME : we need to be smarter than that, because some labels / hyperlink / references
-        #         migth be dropped...
+        #         might be dropped...
         # complex cases: equivalent to Delete + Add
         maql_delete = DeleteColumn(self.schema_name, self.col_name, self.column).get_maql()
         maql_add = AddColumn(self.schema_name, self.col_name, self.new_column).get_maql()

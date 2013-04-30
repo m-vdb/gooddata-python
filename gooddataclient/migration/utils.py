@@ -21,10 +21,10 @@ class DictDiffer(object):
     def changes(self):
         new_state = {}
         old_state = {}
-        for o in self.intersect:
-            if self.old_dict[o] != self.new_dict[o]:
-                new_state[o] = self.new_dict[o]
-                old_state[o] = self.old_dict[o]
+        for key in self.intersect:
+            if self.old_dict[key] != self.new_dict[key]:
+                new_state[key] = self.new_dict[key]
+                old_state[key] = self.old_dict[key]
 
         return new_state, old_state
 
