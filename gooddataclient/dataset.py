@@ -93,7 +93,7 @@ class Dataset(object):
         response = self.connection.get(uri=dataset_json['meta']['uri'])
         content_json = response.json()['dataSet']['content']
 
-        return content_json['attributes'], content_json['facts'], content_json['dataLoadingColumns']
+        return content_json
 
     def get_column_detail(self, uri, dlc=False):
         """
@@ -123,18 +123,17 @@ class Dataset(object):
         :param reference:          a boolean that says if the column
                                    to look for is a reference.
         """
-        attr_uris, fact_uris, dlc_uris = self.get_column_uris()
+        col_uris = self.get_column_uris()
         if attribute:
-            col_uris = attr_uris
+            col_uris = col_uris['attributes']
         elif reference:
-            col_uris = dlc_uris
+            col_uris = col_uris['dataLoadingColumns']
         else:
-            col_uris = fact_uris
-        suffix = ''
+            col_uris = col_uris['facts']
 
+        suffix = ''
         if date:
             prefix = 'dt.'
-            col_uris = fact_uris
         elif reference:
             prefix = 'f_'
             suffix = '_id'
@@ -164,13 +163,13 @@ class Dataset(object):
         return self.has_column(date_name, date=True)
 
     def has_label(self, label_name):
-        attr_uris, fact_uris, _ = self.get_column_uris()
+        col_uris= self.get_column_uris()
         label_identifier_re = 'label\.%(dataset)s\.[a-zA-Z_]+\.%(label_name)s' % {
             'dataset': to_identifier(self.schema_name),
             'label_name': label_name,
         }
 
-        for col_uri in attr_uris + fact_uris:
+        for col_uri in col_uris['attributes'] + col_uris['facts']:
             col_json = self.get_column_detail(col_uri)
             for display in col_json['content'].get('displayForms', []):
                 if re.match(label_identifier_re, display['meta']['identifier']):
