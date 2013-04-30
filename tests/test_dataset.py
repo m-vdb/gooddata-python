@@ -50,9 +50,6 @@ class TestDataset(unittest.TestCase):
         self.assertEquals(examples.forex.date_dimension_maql.replace('forex', 'xerof').replace('Forex', 'Xerof'),
                           date_dimension.get_maql('Xerof', include_time=True))
 
-        date_dimension.create(name='testDateDimension')
-        self.assertRaises(MaqlValidationFailed, date_dimension.create, 'testDateDimension')
-
     def test_sli_manifest(self):
         for (example, ExampleDataset) in examples.examples:
             dataset = ExampleDataset(self.project)
