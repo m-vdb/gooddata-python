@@ -1,7 +1,7 @@
 from gooddataclient.columns import Label, HyperLink
 from gooddataclient.dataset import DateDimension
 from gooddataclient.exceptions import MigrationFailed
-from gooddataclient.migration.utils import get_changed_attributes
+from gooddataclient.migration.utils import get_changed_attributes, get_delete_where_clause
 from gooddataclient.text import to_identifier
 
 
@@ -116,3 +116,25 @@ class AlterColumn(Action):
                                   handle the case of a hyperlink.
         """
         return self.column.get_alter_maql(self.schema_name, self.col_name, new_attributes, hyperlink)
+
+
+class DeleteRow(object):
+    """
+    An action to generate the maql to delete the rows of
+    a dataset, given a criterion.
+    """
+
+    def __init__(self, dataset, where_clause):
+        """
+        Initialize this action. The `dataset` parameter
+        should be an instance of a dataset class, and
+        the where clause should be follow this:
+
+            column [=,>,<,<=,>=, IN] values [[AND, OR] condition]
+        """
+        self.schema_name = dataset.schema_name
+        self.dataset = dataset
+        self.where_params = where_clause
+
+    def get_maql(self):
+        self.dataset.get_maql_delete(get_delete_where_clause(self.where_clause))
