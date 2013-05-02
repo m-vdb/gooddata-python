@@ -115,7 +115,6 @@ class Project(object):
             # verify response content
             content = response.json()
             if 'maqlOK' not in content:
-                import pdb; pdb.set_trace()
                 err_msg = 'MAQL queries did not validate'
                 raise MaqlValidationFailed(err_msg, reponse=content)
 
