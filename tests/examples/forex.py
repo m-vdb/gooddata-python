@@ -5,7 +5,7 @@ from gooddataclient.columns import ConnectionPoint, Fact, Date
 
 class Forex(Dataset):
 
-    id = ConnectionPoint(title='Id', dataType='IDENTITY')
+    id = ConnectionPoint(title='Id')
     time = Date(title='TIME', datetime=True, folder='Forex', schemaReference='Forex', format='dd-MM-yyyy HH:mm:ss')
     volume = Fact(title='VOLUME', dataType='DECIMAL(8,4)', folder='Forex')
     open = Fact(title='OPEN', dataType='DECIMAL(8,4)', folder='Forex')
@@ -94,7 +94,6 @@ schema_xml = '''
       <name>id</name>
       <title>Id</title>
       <ldmType>CONNECTION_POINT</ldmType>
-      <dataType>IDENTITY</dataType>
     </column>
     <column>
       <name>time</name>

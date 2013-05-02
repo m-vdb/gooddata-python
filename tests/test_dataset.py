@@ -50,9 +50,6 @@ class TestDataset(unittest.TestCase):
         self.assertEquals(examples.forex.date_dimension_maql.replace('forex', 'xerof').replace('Forex', 'Xerof'),
                           date_dimension.get_maql('Xerof', include_time=True))
 
-        date_dimension.create(name='testDateDimension')
-        self.assertRaises(MaqlValidationFailed, date_dimension.create, 'testDateDimension')
-
     def test_sli_manifest(self):
         for (example, ExampleDataset) in examples.examples:
             dataset = ExampleDataset(self.project)
@@ -77,6 +74,11 @@ class TestDataset(unittest.TestCase):
         dataset = DummyDataset(self.project)
         self.assertRaises(DataSetNotFoundError, dataset.get_metadata, 'dummy_dataset')
         self.assertRaises(NotImplementedError, dataset.data)
+
+    def test_has_properties(self):
+        # TODO: check has_fact, has_attribute, has_date, has_label
+        # see ANA-459
+        pass
 
 
 if __name__ == '__main__':

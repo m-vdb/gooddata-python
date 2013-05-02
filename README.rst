@@ -35,7 +35,7 @@ Setting up the Dataset for Forex example::
 
 	class Forex(Dataset):
 	
-	    id = ConnectionPoint(title='Id', dataType='IDENTITY')
+	    id = ConnectionPoint(title='Id')
 	    time = Date(title='TIME', datetime=True, folder='Forex', schemaReference='Forex', format='dd-MM-yyyy HH:mm:ss')
 	    volume = Fact(title='VOLUME', dataType='DECIMAL(8,4)', folder='Forex')
 	    open = Fact(title='OPEN', dataType='DECIMAL(8,4)', folder='Forex')
