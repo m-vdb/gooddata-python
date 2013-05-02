@@ -46,6 +46,10 @@ class TestProject(unittest.TestCase):
         if gd_token:
             project.delete()
 
+    # TODO
+    def test_execute_dml(self):
+        pass
+
 
 if __name__ == '__main__':
     args = get_parser().parse_args()
