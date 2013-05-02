@@ -1,7 +1,7 @@
 from gooddataclient.columns import Label, HyperLink
 from gooddataclient.dataset import DateDimension
 from gooddataclient.exceptions import MigrationFailed
-from gooddataclient.migration.utils import get_changed_attributes, get_delete_where_clause
+from gooddataclient.migration.utils import get_changed_attributes
 from gooddataclient.text import to_identifier
 
 

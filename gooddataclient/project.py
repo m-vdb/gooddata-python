@@ -3,10 +3,10 @@ import logging
 
 from requests.exceptions import HTTPError
 
-from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
-                                      ProjectNotFoundError, MaqlExecutionFailed, \
-                                      get_api_msg, MaqlValidationFailed, \
-                                      ProjectCreationError
+from gooddataclient.exceptions import (
+    ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
+    get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed
+)
 
 logger = logging.getLogger("gooddataclient")
 
@@ -157,6 +157,9 @@ class Project(object):
                 get_api_msg(err_json), gd_error=err_json,
                 status_code=err.response.status_code, maql=maql
             )
+
+        uri = response.json()['uri']
+        self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         try:

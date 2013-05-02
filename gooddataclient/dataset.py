@@ -345,12 +345,15 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
         return '\n'.join(maql)
 
     def get_maql_delete(self, where_clause):
-    """
-    A function to retrieve the maql to delete rows
-    from a given dataset.
-    """
-    self.where_clause = where_clause
-    return DELETE_ROW % self
+        """
+        A function to retrieve the maql to delete rows
+        from a given dataset.
+        """
+        return DELETE_ROW % {
+            'where_clause': where_clause,
+            'connection_point': self._connection_point,
+            'schema_name': to_identifier(self.schema_name),
+        }
 
 
 class DateDimension(object):
