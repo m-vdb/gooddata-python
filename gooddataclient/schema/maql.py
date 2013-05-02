@@ -92,3 +92,10 @@ LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} DROP LABELS {
 ATTRIBUTE_ALTER_TITLE = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
 
 FACT_ALTER_TITLE = 'ALTER FACT {fact.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
+
+
+################
+# Row deletion #
+################
+
+DELETE_ROW = 'DELETE FROM {attr.%(schema_name)s.%(_connection_point)s} WHERE %(where_clause)s'
