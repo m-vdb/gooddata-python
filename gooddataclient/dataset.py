@@ -11,7 +11,7 @@ from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
                                    Label, Reference, Fact
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
-from gooddataclient.schema.maql import SYNCHRONIZE, SYNCHRONIZE_PRESERVE
+from gooddataclient.schema.maql import SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW
 
 
 logger = logging.getLogger("gooddataclient")
@@ -27,6 +27,7 @@ class Dataset(object):
 
         # column initializations
         self._columns = []
+        self._connection_point = 'factsof'
         for name, column in self.get_class_members():
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
             # need to mark the labels referencing
@@ -34,6 +35,9 @@ class Dataset(object):
             if isinstance(column, Label) and \
                isinstance(getattr(self, column.reference), ConnectionPoint):
                 column.references_cp = True
+            # need to know which column is connection point
+            if isinstance(column, ConnectionPoint):
+                self._connection_point = name
             self._columns.append((name, column))
 
     class Meta:
@@ -339,6 +343,14 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
         })
 
         return '\n'.join(maql)
+
+    def get_maql_delete(self, where_clause):
+    """
+    A function to retrieve the maql to delete rows
+    from a given dataset.
+    """
+    self.where_clause = where_clause
+    return DELETE_ROW % self
 
 
 class DateDimension(object):

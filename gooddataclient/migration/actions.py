@@ -134,7 +134,12 @@ class DeleteRow(object):
         """
         self.schema_name = dataset.schema_name
         self.dataset = dataset
-        self.where_params = where_clause
+        self.where_clause = where_clause
 
     def get_maql(self):
-        self.dataset.get_maql_delete(get_delete_where_clause(self.where_clause))
+        # FIXME: for now, we need to pass a manual WHERE clause,
+        #        foung in GD documentation. In the future, when
+        #        we want to programatically migrate datasets,
+        #        we may need to change that, and construct the
+        #        where clause from objects.
+        return self.dataset.get_maql_delete(self.where_clause)
