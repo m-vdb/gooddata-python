@@ -23,6 +23,12 @@ CP_CREATE = ('CREATE ATTRIBUTE {attr.%(schema_name)s.%(name)s} '
              '{f_%(schema_name)s.id} FULLSET;\n'
              'ALTER DATASET {dataset.%(schema_name)s} ADD {attr.%(schema_name)s.%(name)s};\n')
 
+CP_DEFAULT_CREATE = ('CREATE ATTRIBUTE {attr.%(schema_name)s.%(name)s} '
+                     'VISUAL(TITLE "Records of %(schema_name)s") AS KEYS {f_%(schema_name)s.id} FULLSET;\n'
+                     'ALTER DATASET {dataset.%(schema_name)s} ADD {attr.%(schema_name)s.%(name)s};\n')
+
+CP_DEFAULT_NAME = 'factsof'
+
 CP_DATATYPE = ALTER_DATATYPE
 
 CP_LABEL = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(name)s} '
@@ -92,3 +98,10 @@ LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} DROP LABELS {
 ATTRIBUTE_ALTER_TITLE = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
 
 FACT_ALTER_TITLE = 'ALTER FACT {fact.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
+
+
+################
+# Row deletion #
+################
+
+DELETE_ROW = 'DELETE FROM {attr.%(schema_name)s.%(connection_point)s} WHERE %(where_clause)s;'

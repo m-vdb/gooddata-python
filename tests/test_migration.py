@@ -4,8 +4,8 @@ import unittest
 
 from gooddataclient.columns import Attribute, Fact, Date, Label, Reference
 from gooddataclient.connection import Connection
-from gooddataclient.migration.actions import AddColumn, AddDate, DeleteColumn
-from gooddataclient.migration.chain import MigrationChain
+from gooddataclient.migration.actions import AddColumn, AddDate, DeleteColumn, DeleteRow
+from gooddataclient.migration.chain import MigrationChain, DataMigrationChain
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.schema.maql import SYNCHRONIZE
 from gooddataclient.text import to_identifier
@@ -161,6 +161,13 @@ class TestMigration(unittest.TestCase):
 
         self.assertFalse(dataset.has_attribute('hobby'))
         self.assertFalse(dataset.has_label('style'))
+
+    def test_data_migration(self):
+        self.dataset.upload()
+        where = ' {label.department.department.name} IN ("HQ General Management", "HQ Information Systems")'
+        del_row = DeleteRow(self.dataset, where)
+        chain = DataMigrationChain(chain=[del_row], project=self.project)
+        chain.execute()
 
 
 if __name__ == '__main__':

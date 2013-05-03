@@ -7,11 +7,14 @@ from requests.exceptions import HTTPError
 
 from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
 from gooddataclient import text
-from gooddataclient.columns import Column, Date, Attribute, ConnectionPoint, \
-                                   Label, Reference, Fact
+from gooddataclient.columns import (
+    Column, Date, Attribute, ConnectionPoint, Label, Reference, Fact
+)
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
-from gooddataclient.schema.maql import SYNCHRONIZE, SYNCHRONIZE_PRESERVE
+from gooddataclient.schema.maql import (
+    SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
+)
 
 
 logger = logging.getLogger("gooddataclient")
@@ -27,6 +30,8 @@ class Dataset(object):
 
         # column initializations
         self._columns = []
+        self._connection_point = CP_DEFAULT_NAME
+        self._has_cp = False
         for name, column in self.get_class_members():
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
             # need to mark the labels referencing
@@ -34,6 +39,10 @@ class Dataset(object):
             if isinstance(column, Label) and \
                isinstance(getattr(self, column.reference), ConnectionPoint):
                 column.references_cp = True
+            # need to know which column is connection point
+            if isinstance(column, ConnectionPoint):
+                self._connection_point = name
+                self._has_cp = True
             self._columns.append((name, column))
 
     class Meta:
@@ -321,24 +330,31 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
                     maql.append(column.get_maql_default())
                     default_set = True
 
-        cp = False
-        for _, column in self._columns:
-            if isinstance(column, ConnectionPoint):
-                cp = True
-                maql.append('# ADD LABEL TO CONNECTION POINT')
-                maql.append(column.get_original_label_maql())
-
-        if not cp:
-            maql.append('CREATE ATTRIBUTE {attr.%s.factsof} VISUAL(TITLE "Records of %s") AS KEYS {f_%s.id} FULLSET;'
-                        % (to_identifier(self.schema_name), to_title(self.schema_name), to_identifier(self.schema_name)))
-            maql.append('ALTER DATASET {dataset.%s} ADD {attr.%s.factsof};'
-                        % (to_identifier(self.schema_name), to_identifier(self.schema_name)))
+        if self._has_cp:
+            maql.append('# ADD LABEL TO CONNECTION POINT')
+            maql.append(getattr(self, self._connection_point).get_original_label_maql())
+        else:
+            maql.append(CP_DEFAULT_CREATE % {
+                    'schema_name': to_identifier(self.schema_name),
+                    'name': self._connection_point
+            })
 
         maql.append(SYNCHRONIZE % {
             'schema_name': to_identifier(self.schema_name)
         })
 
         return '\n'.join(maql)
+
+    def get_maql_delete(self, where_clause):
+        """
+        A function to retrieve the maql to delete rows
+        from a given dataset.
+        """
+        return DELETE_ROW % {
+            'where_clause': where_clause,
+            'connection_point': self._connection_point,
+            'schema_name': to_identifier(self.schema_name),
+        }
 
 
 class DateDimension(object):

@@ -116,3 +116,28 @@ class AlterColumn(Action):
                                   handle the case of a hyperlink.
         """
         return self.column.get_alter_maql(self.schema_name, self.col_name, new_attributes, hyperlink)
+
+
+class DeleteRow(object):
+    """
+    An action to generate the maql to delete the rows of
+    a dataset, given a criterion.
+    """
+
+    def __init__(self, dataset, where_clause):
+        """
+        Initialize this action. The `dataset` parameter
+        should be an instance of a dataset class, and
+        the where clause should be follow GD form.
+        """
+        self.schema_name = dataset.schema_name
+        self.dataset = dataset
+        self.where_clause = where_clause
+
+    def get_maql(self):
+        # FIXME: for now, we need to pass a manual WHERE clause,
+        #        found in GD documentation. In the future, when
+        #        we want to programatically migrate datasets,
+        #        we may need to change that, and construct the
+        #        where clause from objects.
+        return self.dataset.get_maql_delete(self.where_clause)

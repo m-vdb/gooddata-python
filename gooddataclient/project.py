@@ -3,10 +3,10 @@ import logging
 
 from requests.exceptions import HTTPError
 
-from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
-                                      ProjectNotFoundError, MaqlExecutionFailed, \
-                                      get_api_msg, MaqlValidationFailed, \
-                                      ProjectCreationError
+from gooddataclient.exceptions import (
+    ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
+    get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed
+)
 
 logger = logging.getLogger("gooddataclient")
 
@@ -27,6 +27,7 @@ class Project(object):
     MAQL_EXEC_URI = '/gdc/md/%s/ldm/manage2'
     MAQL_VALID_URI = '/gdc/md/%s/maqlvalidator'
     PULL_URI = '/gdc/md/%s/etl/pull'
+    DML_EXEC_URI = '/gdc/md/%s/dml/manage'
 
     def __init__(self, connection):
         self.connection = connection
@@ -114,7 +115,6 @@ class Project(object):
             # verify response content
             content = response.json()
             if 'maqlOK' not in content:
-                import pdb; pdb.set_trace()
                 err_msg = 'MAQL queries did not validate'
                 raise MaqlValidationFailed(err_msg, reponse=content)
 
@@ -137,6 +137,28 @@ class Project(object):
         if wait_for_finish:
             for task_uri in task_uris:
                 self.poll(task_uri, 'wTaskStatus.status', MaqlExecutionFailed, {'maql': maql})
+
+    def execute_dml(self, maql):
+        """
+        Execute MAQL statements on the DML entrypoint of the API,
+        for example deleting rows for a dataset, etc...
+
+        :param maql:    the MAQL statements
+        """
+        data = {'manage': {'maql': maql}}
+
+        try:
+            response = self.connection.post(uri=self.DML_EXEC_URI % self.id, data=data)
+            response.raise_for_status()
+        except HTTPError, err:
+            err_json = err.response.json()['error']
+            raise DMLExecutionFailed(
+                get_api_msg(err_json), gd_error=err_json,
+                status_code=err.response.status_code, maql=maql
+            )
+
+        uri = response.json()['uri']
+        self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         try:

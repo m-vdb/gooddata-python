@@ -37,6 +37,10 @@ class MaqlExecutionFailed(GoodDataClientError):
     pass
 
 
+class DMLExecutionFailed(MaqlExecutionFailed):
+    pass
+
+
 class MaqlValidationFailed(GoodDataClientError):
     pass
 
