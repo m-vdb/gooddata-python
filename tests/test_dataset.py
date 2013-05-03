@@ -16,21 +16,16 @@ class TestDataset(unittest.TestCase):
 
     def setUp(self):
         self.connection = Connection(username, password)
-
-        if gd_token:
-            self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
-        else:
-            self.project = Project(self.connection).load(id=project_id)
+        self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
 
     def tearDown(self):
-        if gd_token:
-            self.project.delete()
+        self.project.delete()
 
     def test_create_dataset(self):
         for (example, ExampleDataset) in examples.examples:
             dataset = ExampleDataset(self.project)
             dataset.create()
-            # TODO: verify the creation
+            dataset.get_metadata(dataset.schema_name)
 
     def test_upload_dataset(self):
         for (example, ExampleDataset) in examples.examples:
@@ -76,9 +71,33 @@ class TestDataset(unittest.TestCase):
         self.assertRaises(NotImplementedError, dataset.data)
 
     def test_has_properties(self):
-        # TODO: check has_fact, has_attribute, has_date, has_label
-        # see ANA-459
-        pass
+        department = examples.examples[0][1](self.project)
+        department.create()
+        worker = examples.examples[1][1](self.project)
+        worker.create()
+        salary = examples.examples[2][1](self.project)
+        salary.create()
+
+        # attributes
+        self.assertTrue(department.has_attribute('department'))
+        self.assertTrue(department.has_attribute('city'))
+        self.assertFalse(department.has_attribute('town'))
+        # facts
+        self.assertTrue(salary.has_fact('payment'))
+        self.assertFalse(worker.has_fact('name'))
+        self.assertFalse(worker.has_fact('age'))
+        # labels
+        self.assertTrue(department.has_label('name'))
+        self.assertFalse(department.has_label('city'))
+        self.assertFalse(department.has_label('building'))
+        # references
+        self.assertTrue(worker.has_reference('department'))
+        self.assertFalse(worker.has_reference('jungle'))
+        self.assertTrue(salary.has_reference('worker'))
+        # dates
+        self.assertTrue(salary.has_date('payday'))
+        self.assertFalse(salary.has_date('expires_at'))
+        self.assertFalse(department.has_date('birthday'))
 
 
 if __name__ == '__main__':
