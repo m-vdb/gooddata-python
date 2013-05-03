@@ -25,7 +25,7 @@ class TestDataset(unittest.TestCase):
         for (example, ExampleDataset) in examples.examples:
             dataset = ExampleDataset(self.project)
             dataset.create()
-            # TODO: verify the creation
+            dataset.get_metadata(dataset.schema_name)
 
     def test_upload_dataset(self):
         for (example, ExampleDataset) in examples.examples:
