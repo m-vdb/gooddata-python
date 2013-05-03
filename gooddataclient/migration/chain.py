@@ -8,7 +8,6 @@ class BaseChain(object):
     A base class for migrations.
     """
 
-    name = 'Migration'
     chain = []
 
     def __init__(self, project):
@@ -30,7 +29,7 @@ class BaseChain(object):
             try:
                 self.push_maql(maql)
             except MaqlExecutionFailed as e:
-                err_msg = 'Migration "%(name)s" failed'
+                err_msg = 'Migration failed, MAQL execution error %(original_error)s'
                 raise MigrationFailed(
                     err_msg, name=self.name, chain=self.chain,
                     original_error=e

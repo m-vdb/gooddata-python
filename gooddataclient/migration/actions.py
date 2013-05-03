@@ -128,9 +128,7 @@ class DeleteRow(object):
         """
         Initialize this action. The `dataset` parameter
         should be an instance of a dataset class, and
-        the where clause should be follow this:
-
-            column [=,>,<,<=,>=, IN] values [[AND, OR] condition]
+        the where clause should be follow GD form.
         """
         self.schema_name = dataset.schema_name
         self.dataset = dataset
@@ -138,7 +136,7 @@ class DeleteRow(object):
 
     def get_maql(self):
         # FIXME: for now, we need to pass a manual WHERE clause,
-        #        foung in GD documentation. In the future, when
+        #        found in GD documentation. In the future, when
         #        we want to programatically migrate datasets,
         #        we may need to change that, and construct the
         #        where clause from objects.
