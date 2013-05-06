@@ -50,6 +50,9 @@ class TestDataset(unittest.TestCase):
             dataset = ExampleDataset(self.project)
             sli_manifest = dataset.get_sli_manifest()
             self.assertIsInstance(sli_manifest, dict)
+            self.assertEquals('INCREMENTAL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
+            sli_manifest = dataset.get_sli_manifest(full_upload=True)
+            self.assertEquals('FULL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
 
     def test_no_upload(self):
         csv_file = os.path.join(os.path.abspath('./'), 'tmp.csv')

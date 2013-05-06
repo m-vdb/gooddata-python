@@ -223,7 +223,7 @@ class Dataset(object):
         self.project.execute_maql(self.get_maql())
 
     def upload(self, keep_csv=False, csv_file=None,
-               no_upload=False, *args, **kwargs):
+               no_upload=False,  full_upload=False, *args, **kwargs):
         """
         A function to upload dataset data. It tries to
         call the data() method of the dataset to retrive
@@ -241,7 +241,7 @@ class Dataset(object):
 
         dates, datetimes = self.get_datetime_column_names()
         dir_name = self.connection.webdav.upload(
-            self.data(*args, **kwargs), self.get_sli_manifest(),
+            self.data(*args, **kwargs), self.get_sli_manifest(full_upload),
             dates, datetimes, keep_csv, csv_file, no_upload
         )
 
@@ -261,14 +261,14 @@ class Dataset(object):
                         fact_folders.append((column.folder, column.folder_title))
         return attribute_folders, fact_folders
 
-    def get_sli_manifest(self):
+    def get_sli_manifest(self, full_upload=False):
         '''Create JSON manifest from columns in schema.
         
         See populateColumnsFromSchema in AbstractConnector.java
         '''
         parts = []
         for _, column in self._columns:
-            parts.extend(column.get_sli_manifest_part())
+            parts.extend(column.get_sli_manifest_part(full_upload))
 
         return {"dataSetSLIManifest": {"parts": parts,
                                        "file": CSV_DATA_FILENAME,
