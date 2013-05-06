@@ -1,6 +1,8 @@
 from gooddataclient.dataset import Dataset
 from gooddataclient.exceptions import MaqlExecutionFailed, MigrationFailed
-from gooddataclient.migration.actions import AddDate
+from gooddataclient.migration.actions import (
+    AddDate, AddColumn, AlterColumn, DeleteColumn
+)
 
 
 class BaseChain(object):
@@ -30,8 +32,9 @@ class BaseChain(object):
                 self.push_maql(maql)
             except MaqlExecutionFailed as e:
                 err_msg = 'Migration failed, MAQL execution error %(original_error)s'
+                import pdb; pdb.set_trace()
                 raise MigrationFailed(
-                    err_msg, name=self.name, chain=self.chain,
+                    err_msg, chain=self.chain,
                     original_error=e
                 )
             else:
@@ -71,11 +74,49 @@ class MigrationChain(BaseChain):
 
     def __init__(self, post_push=True, *args, **kwargs):
         super(MigrationChain, self).__init__(*args, **kwargs)
+        self.simplify_chain()
         self.dates = []
         self.do_post_push = post_push
         self.data_migration = DataMigrationChain(
             chain=self.data_chain, project=self.project
         )
+
+    def simplify_chain(self):
+        """
+        A function that reads the chain of the migration and that,
+        when encountering an AlterColumn action, splits it in Delete + Add
+        actions in complex cases.
+
+        NB: in some cases, GD does not provide a way to do alteration,
+        that is why we fall back to Delete + Add.
+        """
+        simple_chain = []
+
+        for action in self.chain:
+            if isinstance(action, AlterColumn):
+                if action.alteration_state['invalid']:
+                    # FIXME: issue a INFO log here
+                    pass
+
+                if (action.alteration_state['simple'] and
+                    action.alteration_state['same_columns']):
+                    simple_chain.append(action)
+                elif (action.alteration_state['simple'] and
+                  action.alteration_state['hyperlink']):
+                    action.hyperlink_change = True
+                    simple_chain.append(action)
+                else:
+                    # complex cases = Delete + Add
+                    simple_chain.append(
+                        DeleteColumn(action.schema_name, action.col_name, action.column)
+                    )
+                    simple_chain.append(
+                        AddColumn(action.schema_name, action.col_name, action.new_column)
+                    )
+            else:
+                simple_chain.append(action)
+
+        self.chain = simple_chain
 
     def pre_push(self):
         # create the date dimentions if needed
