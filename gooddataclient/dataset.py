@@ -267,7 +267,7 @@ class Dataset(object):
         See populateColumnsFromSchema in AbstractConnector.java
         '''
         parts = []
-        for _, column in self.get_columns():
+        for _, column in self._columns:
             parts.extend(column.get_sli_manifest_part(full_upload))
 
         return {"dataSetSLIManifest": {"parts": parts,
