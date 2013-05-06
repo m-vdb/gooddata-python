@@ -60,9 +60,9 @@ class Column(object):
         identifier = self.IDENTIFIER if not self.references_cp else self.IDENTIFIER_CP
         return identifier % self
 
-    def get_sli_manifest_part(self):
+    def get_sli_manifest_part(self, full_upload=False):
         part = {"columnName": self.name,
-                "mode": "FULL",
+                "mode": "INCREMENTAL" if not full_upload else "FULL",
                 }
         if self.referenceKey:
             part["referenceKey"] = 1
@@ -241,12 +241,12 @@ class Date(Fact):
          populates = 'dt.%s.%s' % (to_identifier(self.schema_name), self.name)
          return {'populates': [populates], 'columnName': name, 'mode': 'FULL'}
 
-    def get_sli_manifest_part(self):
-        parts = super(Date, self).get_sli_manifest_part()
+    def get_sli_manifest_part(self, full_upload=False):
+        parts = super(Date, self).get_sli_manifest_part(full_upload)
         parts.append(self.get_date_dt_column())
 
         if self.datetime:
-            parts.extend(self.time.get_sli_manifest_part())
+            parts.extend(self.time.get_sli_manifest_part(full_upload))
 
         return parts
 
@@ -272,7 +272,7 @@ class Time(Fact):
         populates = 'label.time.second.of.day.%(schemaReference)s' % self
         return {'populates': [populates], 'columnName': name, 'mode': 'FULL', 'referenceKey': 1}
 
-    def get_sli_manifest_part(self):
+    def get_sli_manifest_part(self, full_upload=False):
         return list((self.get_time_tm_column(), self.get_tm_time_id_column()))
 
 
