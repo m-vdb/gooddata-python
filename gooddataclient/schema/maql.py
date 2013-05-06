@@ -42,7 +42,7 @@ FACT_CREATE = ('CREATE FACT {fact.%(schema_name)s.%(name)s} '
 FACT_DATATYPE = ALTER_DATATYPE
 
 DATE_CREATE = ('CREATE FACT {dt.%(schema_name)s.%(name)s} '
-               'VISUAL(TITLE "%(title)s (Date)"%(folder_statement)s)AS {f_%(schema_name)s.dt_%(name)s};\n'
+               'VISUAL(TITLE "%(title)s (Date)"%(folder_statement)s) AS {f_%(schema_name)s.dt_%(name)s};\n'
                'ALTER DATASET {dataset.%(schema_name)s} ADD {dt.%(schema_name)s.%(name)s};\n'
                '# CONNECT THE DATE TO THE DATE DIMENSION\n'
                'ALTER ATTRIBUTE {%(schemaReference)s.date} ADD KEYS {f_%(schema_name)s.dt_%(name)s_id};\n')
@@ -99,6 +99,13 @@ ATTRIBUTE_ALTER_TITLE = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(name)s} VISUAL(
 
 FACT_ALTER_TITLE = 'ALTER FACT {fact.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
 
+DATE_ALTER_TITLE = ('ALTER FACT {dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s (Date)");\n'
+                    'ALTER FACT {tm.dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s (Time)");\n')
+
+LABEL_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
+                     'ALTER LABEL {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s");\n')
+HYPERLINK_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
+                         'ALTER LABEL {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s") HYPERLINK;\n')
 
 ################
 # Row deletion #
