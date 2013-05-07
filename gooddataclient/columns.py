@@ -11,7 +11,7 @@ from gooddataclient.schema.maql import (
     # alteration
     ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE,
     DATE_ALTER_TITLE, LABEL_ALTER_TITLE,
-    HYPERLINK_ALTER_TITLE
+    HYPERLINK_ALTER_TITLE, TIME_ALTER_TITLE
 )
 from gooddataclient.text import to_identifier, to_title
 
@@ -220,10 +220,15 @@ class Date(Fact):
     def populates(self):
         return ["%(schemaReference)s.date.mdyy" % self]
 
-    def get_drop_maql(self, schema_name, name):
-        maql = self.time.get_drop_maql(schema_name, name) if self.datetime else ''
+    def get_drop_maql(self, *args, **kwargs):
+        maql = self.time.get_drop_maql(*args, **kwargs) if self.datetime else ''
 
-        return maql + super(Date, self).get_drop_maql(schema_name, name)
+        return maql + super(Date, self).get_drop_maql(*args, **kwargs)
+
+    def get_alter_maql(self, *args, **kwargs):
+        maql = self.time.get_alter_maql(*args, **kwargs) if self.datetime else ''
+
+        return maql + super(Date, self).get_alter_maql(*args, **kwargs)
 
     def get_date_dt_column(self):
          name = '%(name)s_dt' % self
@@ -250,6 +255,7 @@ class Time(Fact):
     TEMPLATE_CREATE = TIME_CREATE
     TEMPLATE_DATATYPE = None
     TEMPLATE_DROP = TIME_DROP
+    TEMPLATE_TITLE = TIME_ALTER_TITLE
 
     def get_time_tm_column(self):
         name = '%(name)s_tm' % self

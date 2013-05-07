@@ -99,8 +99,10 @@ ATTRIBUTE_ALTER_TITLE = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(name)s} VISUAL(
 
 FACT_ALTER_TITLE = 'ALTER FACT {fact.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s");\n'
 
-DATE_ALTER_TITLE = ('ALTER FACT {dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s (Date)");\n'
-                    'ALTER FACT {tm.dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s (Time)");\n')
+DATE_ALTER_TITLE = 'ALTER FACT {dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s (Date)");\n'
+
+TIME_ALTER_TITLE = 'ALTER FACT {tm.dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(title)s (Time)");\n'
+
 
 LABEL_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
                      'ALTER LABEL {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s");\n')
