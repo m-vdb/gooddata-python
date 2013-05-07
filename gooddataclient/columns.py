@@ -222,6 +222,7 @@ class Date(Fact):
     referenceKey = True
     TEMPLATE_CREATE = DATE_CREATE
     TEMPLATE_DROP = DATE_DROP
+    TEMPLATE_DATATYPE = None
 
     def __init__(self, **kwargs):
         super(Date, self).__init__(**kwargs)
