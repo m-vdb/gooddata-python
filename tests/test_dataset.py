@@ -55,7 +55,16 @@ class TestDataset(unittest.TestCase):
             self.assertEquals('FULL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
 
     def test_no_upload(self):
+        '''
+        test that no connection to GD API is made.
+        Uses a mock connection that will raise an error if put is called
+        '''
         csv_file = os.path.join(os.path.abspath('./'), 'tmp.csv')
+
+        def mock_put(uri, data, headers):
+            raise Exception('GD API should not be called')
+
+        self.project.connection.webdav.put = mock_put
         for (example, ExampleDataset) in examples.examples:
             dataset = ExampleDataset(self.project)
             dataset.upload(
