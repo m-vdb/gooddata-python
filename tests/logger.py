@@ -16,3 +16,10 @@ ch.setFormatter(formatter)
 
 # add ch to logger
 logger.addHandler(ch)
+
+
+def set_log_level(debug=False):
+    if debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
