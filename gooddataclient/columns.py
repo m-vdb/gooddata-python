@@ -144,12 +144,19 @@ class Column(object):
                 maql += self.TEMPLATE_TITLE
         except KeyError:
             pass
+
         try:
             self.dataType = new_attributes['dataType']
             if self.TEMPLATE_DATATYPE:
                 maql += self.TEMPLATE_DATATYPE
         except KeyError:
             pass
+
+        # in the case of Label / HyperLink, we can
+        # arrive at this step without any change in title or
+        # dataType and still want to modify the attribute
+        if not maql and isinstance(self, Label):
+            maql = self.TEMPLATE_TITLE
 
         return maql % self
 
@@ -303,7 +310,7 @@ class Label(Column):
     def get_alter_maql(self, hyperlink_change, *args, **kwargs):
         if hyperlink_change:
             self.TEMPLATE_TITLE = HYPERLINK_ALTER_TITLE
-        return super(self, Label).get_alter_maql(*args, **kwargs)
+        return super(Label, self).get_alter_maql(*args, **kwargs)
 
 
 class HyperLink(Label):
@@ -319,4 +326,4 @@ class HyperLink(Label):
     def get_alter_maql(self, hyperlink_change, *args, **kwargs):
         if hyperlink_change:
             self.TEMPLATE_TITLE = LABEL_ALTER_TITLE
-        return super(self, Label).get_alter_maql(*args, **kwargs)
+        return super(Label, self).get_alter_maql(*args, **kwargs)
