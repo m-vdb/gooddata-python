@@ -11,7 +11,7 @@ class Action(object):
     during a LDM migration.
     """
 
-    def __init__(self, schema_name, col_name, column, label_references_cp=False):
+    def __init__(self, schema_name, col_name, column, label_references_cp=None):
         """
         Initialize the action to execute.
 
@@ -79,11 +79,20 @@ class AlterColumn(Action):
         """
         super(AlterColumn, self).__init__(*args, **kwargs)
         self.new_column = new_column
+        # if the user did not specify that the label references
+        # a connection point, that means that we copy it from the
+        # old column
+        if self.label_references_cp is None:
+            self.new_column.references_cp = self.column.references_cp
+        # in other case, that means that we explicitely wnat
+        # to change this attribute
+        else:
+            self.new_column.references_cp = self.label_references_cp
+
         self.new_attrs = get_changed_attributes(self.new_column.__dict__, self.column.__dict__)
         # we can't perform actions on folders (useless and painful)
         self.new_attrs.pop('folder', None)
         self.new_attrs.pop('folder_title', None)
-        self.hyperlink_change = False
 
     @property
     def alteration_state(self):
@@ -110,7 +119,7 @@ class AlterColumn(Action):
                 invalid = True
 
         return {
-            'nb_changes': len(self.new_attrs),
+            'nb_changes': len(self.new_attrs) + hyperlink,
             'simple': simple_alter,
             'same_columns': same_columns,
             'hyperlink': hyperlink,
@@ -120,9 +129,12 @@ class AlterColumn(Action):
     def get_maql(self):
         if not self.alteration_state['nb_changes']:
             return ''
+
+        hyperlink_change = self.alteration_state['simple'] & self.alteration_state['hyperlink']
+
         return self.column.get_alter_maql(
             schema_name=to_identifier(self.schema_name), name=self.col_name,
-            new_attributes=self.new_attrs, hyperlink_change=self.hyperlink_change
+            new_attributes=self.new_attrs, hyperlink_change=hyperlink_change
         )
 
 
