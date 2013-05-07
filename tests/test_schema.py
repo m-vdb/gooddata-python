@@ -5,7 +5,7 @@ from xml.dom.minidom import parseString
 from gooddataclient.schema.utils import get_xml_schema
 from gooddataclient.project import Project
 
-from tests import logger, examples, get_parser
+from tests import logger, examples
 
 
 logger.set_log_level(debug=('-v' in sys.argv))
