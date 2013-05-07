@@ -58,7 +58,7 @@ class Dataset(object):
 
     @property
     def schema_name(self):
-        return self.Meta.schema_name or self.__class__.__name__.lower()
+        return self.Meta.schema_name or self.__class__.__name__
 
     @property
     def project_name(self):
@@ -84,8 +84,9 @@ class Dataset(object):
         except KeyError:
             datasets = []
 
+        identifier = 'dataset.%s' % to_identifier(name)
         for dataset in datasets:
-            if dataset['meta']['identifier'].split('.')[-1] == name:
+            if dataset['meta']['identifier'] == identifier:
                 return dataset
         raise DataSetNotFoundError(
             'DataSet %(dataset)s not found', sets=datasets,
