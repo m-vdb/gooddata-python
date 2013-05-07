@@ -8,6 +8,9 @@ from gooddataclient.project import Project
 from tests import logger, examples, get_parser
 
 
+logger.set_log_level(debug=('-v' in sys.argv))
+
+
 class TestSchema(unittest.TestCase):
 
     def test_xml_schema(self):
@@ -28,7 +31,4 @@ class TestSchema(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()

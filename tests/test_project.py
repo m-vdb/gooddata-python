@@ -9,10 +9,11 @@ from gooddataclient.exceptions import (
 )
 
 from tests.credentials import password, username, gd_token
-from tests import examples, logger, get_parser
+from tests import examples, logger
 
 
 TEST_PROJECT_NAME = 'gdc_unittest'
+logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestProject(unittest.TestCase):
@@ -56,7 +57,4 @@ class TestProject(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()
