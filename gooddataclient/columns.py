@@ -27,8 +27,9 @@ class Column(object):
     TEMPLATE_TITLE = None
     folder_statement = ''
 
-    def __init__(self, title, folder=None, reference=None,
-                 schemaReference=None, dataType=None, datetime=False, format=None):
+    def __init__(
+        self, title, folder=None, reference=None, schemaReference=None,
+        dataType=None, datetime=False, format=None, references_cp=False):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
         self.folder_title = to_title(folder)
@@ -39,7 +40,7 @@ class Column(object):
         self.format = format
         # an attribute useful for labels,
         # to know if they reference a connection point
-        self.references_cp = False
+        self.references_cp = references_cp
 
     def __getitem__(self, item):
         """
