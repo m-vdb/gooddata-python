@@ -105,9 +105,9 @@ TIME_ALTER_TITLE = 'ALTER FACT {tm.dt.%(schema_name)s.%(name)s} VISUAL(TITLE "%(
 
 
 LABEL_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
-                     'ALTER LABEL {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s");\n')
+                     'ALTER LABELS {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s");\n')
 HYPERLINK_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
-                         'ALTER LABEL {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s") HYPERLINK;\n')
+                         'ALTER LABELS {label.%(schema_name)s.%(reference)s.%(name)s} VISUAL(TITLE "%(title)s") HYPERLINK;\n')
 
 ################
 # Row deletion #
