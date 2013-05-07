@@ -84,8 +84,9 @@ class Dataset(object):
         except KeyError:
             datasets = []
 
+        identifier = 'dataset.%s' % to_identifier(name)
         for dataset in datasets:
-            if dataset['meta']['title'] == name:
+            if dataset['meta']['identifier'] == identifier:
                 return dataset
         raise DataSetNotFoundError(
             'DataSet %(dataset)s not found', sets=datasets,
