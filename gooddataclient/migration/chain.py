@@ -1,4 +1,5 @@
 from gooddataclient.dataset import Dataset
+from gooddataclient.columns import Date
 from gooddataclient.exceptions import MaqlExecutionFailed, MigrationFailed
 from gooddataclient.migration.actions import (
     AddDate, AddColumn, AlterColumn, DeleteColumn
@@ -32,7 +33,6 @@ class BaseChain(object):
                 self.push_maql(maql)
             except MaqlExecutionFailed as e:
                 err_msg = 'Migration failed, MAQL execution error %(original_error)s'
-                import pdb; pdb.set_trace()
                 raise MigrationFailed(
                     err_msg, chain=self.chain,
                     original_error=e
@@ -99,20 +99,20 @@ class MigrationChain(BaseChain):
                     pass
 
                 if (action.alteration_state['simple'] and
-                    action.alteration_state['same_columns']):
-                    simple_chain.append(action)
-                elif (action.alteration_state['simple'] and
-                  action.alteration_state['hyperlink']):
-                    action.hyperlink_change = True
+                    (action.alteration_state['same_columns'] or
+                     action.alteration_state['hyperlink'])):
                     simple_chain.append(action)
                 else:
                     # complex cases = Delete + Add
                     simple_chain.append(
                         DeleteColumn(action.schema_name, action.col_name, action.column)
                     )
-                    simple_chain.append(
-                        AddColumn(action.schema_name, action.col_name, action.new_column)
-                    )
+                    if isinstance(action.new_column, Date):
+                        add_action = AddDate(action.schema_name, action.col_name, action.new_column)
+                    else:
+                        add_action = AddColumn(action.schema_name, action.col_name, action.new_column)
+
+                    simple_chain.append(add_action)
             else:
                 simple_chain.append(action)
 
