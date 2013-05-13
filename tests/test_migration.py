@@ -12,10 +12,13 @@ from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.schema.maql import SYNCHRONIZE
 from gooddataclient.text import to_identifier
 
-from tests import logger, get_parser, examples
+from tests import logger, examples
 from tests.credentials import username, password, gd_token
 from tests.examples.country import Country
 from tests.test_project import TEST_PROJECT_NAME
+
+
+logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestMigration(unittest.TestCase):
@@ -284,7 +287,4 @@ class TestMigration(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()
