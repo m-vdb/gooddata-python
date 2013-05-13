@@ -1,11 +1,14 @@
 import time
 import logging
 
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    HTTPError, ConnectionError
+)
 
 from gooddataclient.exceptions import (
     ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
-    get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed
+    get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed,
+    GoodDataTotallyDown
 )
 
 logger = logging.getLogger("gooddataclient")
@@ -72,6 +75,8 @@ class Project(object):
                 err_msg, name=name, response=err.response.content,
                 status_code=err.response.status_code
             )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         else:
             id = response.json()['uri'].split('/')[-1]
             logger.debug("Created project name=%s with id=%s" % (name, id))
@@ -89,6 +94,8 @@ class Project(object):
                 status_code=err.response.status_code,
                 response=err.response.content
             )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         except TypeError:
             err_msg = 'Project does not seem to be opened: %(project_id)s'
             raise ProjectNotOpenedError(err_msg, project_id=self.id, uri=uri)
@@ -111,6 +118,8 @@ class Project(object):
                 err_msg, response=err.response.content,
                 status_code=err.response.status_code
             )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         else:
             # verify response content
             content = response.json()
@@ -131,6 +140,8 @@ class Project(object):
                 get_api_msg(err_json), gd_error=err_json,
                 status_code=err.response.status_code, maql=maql
             )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         # It seems the API can retrieve several links
         task_uris = [entry['link'] for entry in response.json()['entries']]
 
@@ -156,6 +167,8 @@ class Project(object):
                 get_api_msg(err_json), gd_error=err_json,
                 status_code=err.response.status_code, maql=maql
             )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
 
         uri = response.json()['uri']
         self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
@@ -177,6 +190,9 @@ class Project(object):
                     get_api_msg(err_json), gd_error=err_json,
                     status_code=status_code, dir_name=dir_name
                 )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
+
         task_uri = response.json()['pullTask']['uri']
 
         if wait_for_finish:

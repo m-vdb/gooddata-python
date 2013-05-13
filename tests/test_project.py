@@ -1,11 +1,13 @@
 import sys
 import unittest
+import requests
 
+from requests.exceptions import ConnectionError
 from gooddataclient.connection import Connection
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.exceptions import (
     DataSetNotFoundError, MaqlValidationFailed, ProjectNotOpenedError,
-    ProjectNotFoundError, DMLExecutionFailed
+    ProjectNotFoundError, DMLExecutionFailed, GoodDataTotallyDown
 )
 
 from tests.credentials import password, username, gd_token
@@ -54,6 +56,10 @@ class TestProject(unittest.TestCase):
             project.execute_dml('DELETE FROM {attr.department.department};')
         except DMLExecutionFailed, e:
             self.fail('project.execute_dml: unexpected exception: %s' %e)
+
+    def test_gooddata_totally_down_exception(self):
+        self.connection.HOST = 'http://toto'
+        self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, TEST_PROJECT_NAME, gd_token)
 
 
 if __name__ == '__main__':
