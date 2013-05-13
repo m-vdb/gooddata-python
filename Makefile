@@ -1,6 +1,19 @@
-# TESTS = '*'
 CREDENTIALS_TPL = tests/credentials.py.tpl
 CREDENTIALS_FILE = tests/credentials.py
+VERBOSITY = ''
+
+ifeq "$(TESTS)" ""
+TEST_CLAUSE = tests
+else
+TEST_CLAUSE = tests.${TESTS}
+endif
+
+ifeq "$(VERBOSITY)" "DEBUG"
+UNITTEST = -v ${TEST_CLAUSE}
+else
+UNITTEST = ${TEST_CLAUSE}
+endif
+
 
 install:
 	@echo 'Copying credentials...'
@@ -9,4 +22,4 @@ install:
 	@(pip install -r requirements.txt)
 
 test:
-	@(PYTHONPATH=`pwd -P` python -m unittest tests.${TESTS})
+	@(PYTHONPATH=`pwd -P` python -m unittest ${UNITTEST})
