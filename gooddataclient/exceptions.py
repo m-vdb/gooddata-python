@@ -1,4 +1,5 @@
 
+
 class GoodDataClientError(Exception):
 
     def __init__(self, msg, **kwargs):
@@ -50,6 +51,10 @@ class GetSLIManifestFailed(GoodDataClientError):
 
 
 class MigrationFailed(GoodDataClientError):
+    pass
+
+
+class GoodDataTotallyDown(GoodDataClientError):
     pass
 
 
