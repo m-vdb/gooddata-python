@@ -9,7 +9,10 @@ from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
 from tests.credentials import password, username, project_id, gd_token
 from tests.test_project import TEST_PROJECT_NAME
-from tests import logger, examples, get_parser
+from tests import logger, examples
+
+
+logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestDataset(unittest.TestCase):
@@ -113,7 +116,4 @@ class TestDataset(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()
