@@ -1,17 +1,18 @@
 CREDENTIALS_TPL = tests/credentials.py.tpl
 CREDENTIALS_FILE = tests/credentials.py
-VERBOSITY = ''
+VERBOSITY =
+TESTS =
 
 ifeq "$(TESTS)" ""
-TEST_CLAUSE = tests
+	TEST_CLAUSE = tests
 else
-TEST_CLAUSE = tests.${TESTS}
+	TEST_CLAUSE = tests.${TESTS}
 endif
 
 ifeq "$(VERBOSITY)" "DEBUG"
-UNITTEST = -v ${TEST_CLAUSE}
+	UNITTEST = -v ${TEST_CLAUSE}
 else
-UNITTEST = ${TEST_CLAUSE}
+	UNITTEST = ${TEST_CLAUSE}
 endif
 
 
