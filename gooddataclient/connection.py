@@ -3,9 +3,13 @@ import logging
 
 import simplejson as json
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    HTTPError, ConnectionError
+)
 
-from gooddataclient.exceptions import AuthenticationError
+from gooddataclient.exceptions import (
+    AuthenticationError, GoodDataTotallyDown
+)
 from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME, DLI_MANIFEST_FILENAME
 
 logger = logging.getLogger("gooddataclient")
@@ -47,6 +51,8 @@ class Connection(object):
             r2.raise_for_status()
         except HTTPError, err:
             raise AuthenticationError(str(err), content=err.response.content)
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
 
     def relogin(self):
         self.login(self.username, self.password)

@@ -60,10 +60,3 @@ class GoodDataTotallyDown(GoodDataClientError):
 
 def get_api_msg(err_json):
     return err_json['message'] % tuple(err_json['parameters'])
-
-
-def check_gooddata_down(err_response):
-    try:
-        err_response.json()
-    except ValueError:
-        raise GoodDataTotallyDown(err_response)
