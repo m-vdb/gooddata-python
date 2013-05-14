@@ -29,7 +29,8 @@ class Column(object):
 
     def __init__(
         self, title, folder=None, reference=None, schemaReference=None,
-        dataType=None, datetime=False, format=None, references_cp=False):
+        dataType=None, datetime=False, format=None, references_cp=False
+    ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
         self.folder_title = to_title(folder)
@@ -339,4 +340,5 @@ class HyperLink(Label):
     def get_alter_maql(self, hyperlink_change, *args, **kwargs):
         if hyperlink_change:
             self.TEMPLATE_TITLE = LABEL_ALTER_TITLE
+        # short-circuit Label.get_alter_maql
         return super(Label, self).get_alter_maql(*args, **kwargs)
