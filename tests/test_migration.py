@@ -49,6 +49,7 @@ class TestMigration(unittest.TestCase):
 
         self.dataset.boss = boss
         self.dataset.number_of_windows = number_of_windows
+        self.dataset._columns = self.dataset.get_class_members()
         self.dataset.data = self.dataset.added_data
         self.dataset.upload()
 
@@ -62,6 +63,7 @@ class TestMigration(unittest.TestCase):
         self.assertFalse(self.dataset.has_attribute('city'))
 
         self.dataset.city = None
+        self.dataset._columns = self.dataset.get_class_members()
         self.dataset.data = self.dataset.deleted_data
         self.dataset.upload()
 
@@ -81,7 +83,7 @@ class TestMigration(unittest.TestCase):
         class TestChain(MigrationChain):
             chain = [add1, del1, add2]
 
-        test_chain = TestChain(self.project)
+        test_chain = TestChain(project=self.project)
         test_chain.execute()
 
         self.assertTrue(self.dataset.has_attribute('boss'))
@@ -105,7 +107,7 @@ class TestMigration(unittest.TestCase):
         class ComplexMigration(MigrationChain):
             chain = [add1, add2, add3]
 
-        complex_migration = ComplexMigration(self.project)
+        complex_migration = ComplexMigration(project=self.project)
         complex_migration.execute()
 
         self.assertTrue(self.dataset.has_date('created_at'))
@@ -125,18 +127,19 @@ class TestMigration(unittest.TestCase):
         class ComplexMigration(MigrationChain):
             chain = [del1, del2]
 
-        complex_migration = ComplexMigration(self.project)
+        complex_migration = ComplexMigration(project=self.project)
         complex_migration.execute()
 
         self.assertFalse(dataset.has_label('lastname'))
         self.assertFalse(dataset.has_reference('department'))
 
         salary, Salary = examples.examples[2]
-        dataset = Salary(self.project)
-        dataset.payday = Date(
+        Salary.payday = Date(
             title='Pay Day', format='yyyy-MM-dd HH:mm:SS',
             schemaReference='payment', folder='Salary', datetime=True
         )
+
+        dataset = Salary(self.project)
         dataset.create()
 
         # date drop
@@ -159,7 +162,7 @@ class TestMigration(unittest.TestCase):
         class ComplexMigration(MigrationChain):
             chain = [del1, ]
 
-        complex_migration = ComplexMigration(self.project)
+        complex_migration = ComplexMigration(project=self.project)
         complex_migration.execute()
 
         self.assertFalse(dataset.has_attribute('hobby'))
