@@ -119,7 +119,7 @@ class Dataset(object):
         except KeyError:
             return column_json['fact']
 
-    def has_column(self, col_name, attribute=False, date=False, reference=False, title=None):
+    def has_column(self, col_name, attribute=False, fact=False, date=False, reference=False, title=None):
         """
         A function to check that a dataset has a specific column
         (attribute or fact), saved on GoodData.
@@ -146,8 +146,10 @@ class Dataset(object):
         elif reference:
             prefix = 'f_'
             suffix = '_id'
-        else:
-            prefix = 'attr.' if attribute else 'fact.'
+        elif attribute:
+            prefix = 'attr.'
+        elif fact:
+            prefix = 'fact.'
 
         col_identifier = '%(prefix)s%(dataset)s.%(col_name)s%(suffix)s' % {
             'prefix': prefix,
@@ -168,7 +170,7 @@ class Dataset(object):
         return self.has_column(attr_name, attribute=True, **kwargs)
 
     def has_fact(self, fact_name, **kwargs):
-        return self.has_column(fact_name, attribute=False, **kwargs)
+        return self.has_column(fact_name, fact=True, **kwargs)
 
     def has_date(self, date_name, **kwargs):
         return self.has_column(date_name, date=True, **kwargs)
