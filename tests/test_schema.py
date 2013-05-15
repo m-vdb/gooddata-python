@@ -18,7 +18,7 @@ class TestSchema(unittest.TestCase):
             schema = parseString(example.schema_xml.replace(' ', '').replace('\n', ''))
             dataset = ExampleDataset(Project(None))
             gen_schema = parseString(get_xml_schema(dataset))
-            # TODO: test for XML content (not so easily comparable)
+
             self.assertEqual(len(schema.childNodes), len(gen_schema.childNodes))
             self.assertEqual(len(schema.childNodes[0].childNodes), len(gen_schema.childNodes[0].childNodes),
                              '%s != %s' % (', '.join(n.nodeName for n in schema.childNodes[0].childNodes),

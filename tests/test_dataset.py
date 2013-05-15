@@ -37,7 +37,6 @@ class TestDataset(unittest.TestCase):
             dataset_metadata = dataset.get_metadata(name=dataset.schema_name)
             self.assertTrue(dataset_metadata['dataUploads'])
             self.assertEquals('OK', dataset_metadata['lastUpload']['dataUploadShort']['status'])
-            # TODO: check different data for the upload
 
     def test_date_dimension(self):
         date_dimension = DateDimension(self.project)
