@@ -107,7 +107,9 @@ so that no conflicts occur with existing configurations.
 Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this::
 
         $ make test # execute the whole test suite
-        $ make test_connection # execute a particular test
+        $ make test TESTS=test_migration
+        $ make test TESTS=test_migration.TestMigration
+        $ make test TESTS=test_migration.TestMigration.test_simple_add_column
 
 See the available tests in ``tests/`` directory.
 
