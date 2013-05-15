@@ -32,6 +32,7 @@ class BaseChain(object):
             try:
                 self.push_maql(maql)
             except MaqlExecutionFailed as e:
+                import pdb; pdb.set_trace()
                 err_msg = 'Migration failed, MAQL execution error %(original_error)s'
                 raise MigrationFailed(
                     err_msg, chain=self.chain,

@@ -24,9 +24,9 @@ class Dataset(object):
 
     DATASETS_URI = '/gdc/md/%s/data/sets'
 
-    def __init__(self, project):
+    def __init__(self, project=None):
         self.project = project
-        self.connection = project.connection
+        self.connection = project.connection if project else None
 
         # column initializations
         self._columns = []
