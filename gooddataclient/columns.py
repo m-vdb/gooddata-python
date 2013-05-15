@@ -9,7 +9,9 @@ from gooddataclient.schema.maql import (
     FACT_DROP, ATTRIBUTE_DROP, DATE_DROP, TIME_DROP,
     REFERENCE_DROP, LABEL_DROP,
     # alteration
-    ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE
+    ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE,
+    DATE_ALTER_TITLE, LABEL_ALTER_TITLE,
+    HYPERLINK_ALTER_TITLE, TIME_ALTER_TITLE
 )
 from gooddataclient.text import to_identifier, to_title
 
@@ -22,10 +24,13 @@ class Column(object):
     TEMPLATE_CREATE = None
     TEMPLATE_DATATYPE = None
     TEMPLATE_DROP = None
+    TEMPLATE_TITLE = None
     folder_statement = ''
 
-    def __init__(self, title, folder=None, reference=None,
-                 schemaReference=None, dataType=None, datetime=False, format=None):
+    def __init__(
+        self, title, folder=None, reference=None, schemaReference=None,
+        dataType=None, datetime=False, format=None, references_cp=False
+    ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
         self.folder_title = to_title(folder)
@@ -36,7 +41,7 @@ class Column(object):
         self.format = format
         # an attribute useful for labels,
         # to know if they reference a connection point
-        self.references_cp = False
+        self.references_cp = references_cp
 
     def __getitem__(self, item):
         """
@@ -123,7 +128,7 @@ class Column(object):
         self.set_name_and_schema(name, schema_name)
         return self.TEMPLATE_DROP % self
 
-    def get_alter_maql(self, schema_name, name, new_attributes):
+    def get_alter_maql(self, schema_name, name, new_attributes, *args, **kwargs):
         """
         A function to retrieve the MAQL to alter a column.
 
@@ -131,7 +136,30 @@ class Column(object):
         :param name:              the name of the column
         :param new_attributes:    a dictionary of the new attributes
         """
-        raise NotImplementedError
+        self.set_name_and_schema(name, schema_name)
+        maql = ''
+
+        try:
+            self.title = new_attributes['title']
+            if self.TEMPLATE_TITLE:
+                maql += self.TEMPLATE_TITLE
+        except KeyError:
+            pass
+
+        try:
+            self.dataType = new_attributes['dataType']
+            if self.TEMPLATE_DATATYPE:
+                maql += self.TEMPLATE_DATATYPE
+        except KeyError:
+            pass
+
+        # in the case of Label / HyperLink, we can
+        # arrive at this step without any change in title or
+        # dataType and still want to modify the attribute
+        if not maql and isinstance(self, Label):
+            maql = self.TEMPLATE_TITLE
+
+        return maql % self
 
 
 class Attribute(Column):
@@ -139,6 +167,7 @@ class Attribute(Column):
     ldmType = 'ATTRIBUTE'
     IDENTIFIER = 'd_%(schema_name)s_%(name)s.nm_%(name)s'
     TEMPLATE_CREATE = ATTRIBUTE_CREATE
+    TEMPLATE_TITLE = ATTRIBUTE_ALTER_TITLE
     TEMPLATE_DATATYPE = ATTRIBUTE_DATATYPE
     TEMPLATE_DROP = ATTRIBUTE_DROP
     referenceKey = True
@@ -151,23 +180,6 @@ class Attribute(Column):
 
     def populates(self):
         return ["label.%(schema_name)s.%(name)s" % self]
-
-    def get_alter_maql(self, schema_name, name, new_attributes):
-        self.set_name_and_schema(name, schema_name)
-        maql = ''
-
-        try:
-            self.title = new_attributes['title']
-            maql += ATTRIBUTE_ALTER_TITLE
-        except KeyError:
-            pass
-        try:
-            self.dataType = new_attributes['dataType']
-            maql += self.TEMPLATE_DATATYPE
-        except KeyError:
-            pass
-
-        return maql % self
 
 
 class ConnectionPoint(Attribute):
@@ -187,6 +199,7 @@ class Fact(Column):
     IDENTIFIER = 'f_%(schema_name)s.f_%(name)s'
     TEMPLATE_CREATE = FACT_CREATE
     TEMPLATE_DATATYPE = FACT_DATATYPE
+    TEMPLATE_TITLE = FACT_ALTER_TITLE
     TEMPLATE_DROP = FACT_DROP
 
     @property
@@ -198,23 +211,6 @@ class Fact(Column):
     def populates(self):
         return ["fact.%(schema_name)s.%(name)s" % self]
 
-    def get_alter_maql(self, schema_name, name, new_attributes):
-        self.set_name_and_schema(name, schema_name)
-        maql = ''
-
-        try:
-            self.title = new_attributes['title']
-            maql += FACT_ALTER_TITLE
-        except KeyError:
-            pass
-        try:
-            self.dataType = new_attributes['dataType']
-            maql += self.TEMPLATE_DATATYPE
-        except KeyError:
-            pass
-
-        return maql % self
-
 
 class Date(Fact):
 
@@ -222,6 +218,7 @@ class Date(Fact):
     referenceKey = True
     TEMPLATE_CREATE = DATE_CREATE
     TEMPLATE_DROP = DATE_DROP
+    TEMPLATE_TITLE = DATE_ALTER_TITLE
     TEMPLATE_DATATYPE = None
 
     def __init__(self, **kwargs):
@@ -232,10 +229,15 @@ class Date(Fact):
     def populates(self):
         return ["%(schemaReference)s.date.mdyy" % self]
 
-    def get_drop_maql(self, schema_name, name):
-        maql = self.time.get_drop_maql(schema_name, name) if self.datetime else ''
+    def get_drop_maql(self, *args, **kwargs):
+        maql = self.time.get_drop_maql(*args, **kwargs) if self.datetime else ''
 
-        return maql + super(Date, self).get_drop_maql(schema_name, name)
+        return maql + super(Date, self).get_drop_maql(*args, **kwargs)
+
+    def get_alter_maql(self, *args, **kwargs):
+        maql = self.time.get_alter_maql(*args, **kwargs) if self.datetime else ''
+
+        return maql + super(Date, self).get_alter_maql(*args, **kwargs)
 
     def get_date_dt_column(self, full_upload):
          name = '%(name)s_dt' % self
@@ -266,6 +268,7 @@ class Time(Fact):
     TEMPLATE_CREATE = TIME_CREATE
     TEMPLATE_DATATYPE = None
     TEMPLATE_DROP = TIME_DROP
+    TEMPLATE_TITLE = TIME_ALTER_TITLE
 
     def get_time_tm_column(self, full_upload):
         name = '%(name)s_tm' % self
@@ -309,6 +312,7 @@ class Label(Column):
     IDENTIFIER_CP = 'f_%(schema_name)s.nm_%(name)s'
     TEMPLATE_CREATE = LABEL_CREATE
     TEMPLATE_DATATYPE = LABEL_DATATYPE
+    TEMPLATE_TITLE = LABEL_ALTER_TITLE
     TEMPLATE_DROP = LABEL_DROP
 
     def get_maql_default(self):
@@ -317,12 +321,24 @@ class Label(Column):
     def populates(self):
         return ["label.%(schema_name)s.%(reference)s.%(name)s" % self]
 
+    def get_alter_maql(self, hyperlink_change, *args, **kwargs):
+        if hyperlink_change:
+            self.TEMPLATE_TITLE = HYPERLINK_ALTER_TITLE
+        return super(Label, self).get_alter_maql(*args, **kwargs)
+
 
 class HyperLink(Label):
 
     ldmType = 'HYPERLINK'
+    TEMPLATE_TITLE = HYPERLINK_ALTER_TITLE
 
     def get_maql(self, schema_name=None, name=None):
         maql = super(HyperLink, self).get_maql(schema_name, name)
 
         return maql + HYPERLINK_CREATE % self
+
+    def get_alter_maql(self, hyperlink_change, *args, **kwargs):
+        if hyperlink_change:
+            self.TEMPLATE_TITLE = LABEL_ALTER_TITLE
+        # short-circuit Label.get_alter_maql
+        return super(Label, self).get_alter_maql(*args, **kwargs)

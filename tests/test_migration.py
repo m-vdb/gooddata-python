@@ -2,9 +2,11 @@ from copy import copy
 import sys
 import unittest
 
-from gooddataclient.columns import Attribute, Fact, Date, Label, Reference
+from gooddataclient.columns import Attribute, Fact, Date, Label, Reference, HyperLink
 from gooddataclient.connection import Connection
-from gooddataclient.migration.actions import AddColumn, AddDate, DeleteColumn, DeleteRow
+from gooddataclient.migration.actions import (
+    AddColumn, AddDate, DeleteColumn, DeleteRow, AlterColumn
+)
 from gooddataclient.migration.chain import MigrationChain, DataMigrationChain
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.schema.maql import SYNCHRONIZE
@@ -174,6 +176,117 @@ class TestMigration(unittest.TestCase):
         del_row = DeleteRow(self.dataset, where)
         chain = DataMigrationChain(chain=[del_row], project=self.project)
         chain.execute()
+
+    def test_alter_conversion(self):
+        old = self.dataset.name
+        new = Reference(title="Dummy", reference="dummy", schemaReference="dummy_dataset")
+        new2 = Label(title="New name", reference="city")
+        alt = AlterColumn(
+            schema_name=self.dataset.schema_name, col_name="name",
+            column=old, new_column=new
+        )
+        alt2 = AlterColumn(
+            schema_name=self.dataset.schema_name, col_name="name",
+            column=old, new_column=new2
+        )
+        self.assertFalse(alt.alteration_state['simple'])
+        self.assertFalse(alt.alteration_state['same_columns'])
+        self.assertFalse(alt.alteration_state['hyperlink'])
+
+        class AlterMigration(MigrationChain):
+            chain = [alt, alt2]
+
+        migration = AlterMigration(project=self.project)
+        self.assertEqual(len(migration.chain), 4)
+        self.assertIsInstance(migration.chain[0], DeleteColumn)
+        self.assertIsInstance(migration.chain[1], AddColumn)
+        self.assertIsInstance(migration.chain[2], DeleteColumn)
+        self.assertIsInstance(migration.chain[3], AddColumn)
+
+    def test_alter_attr_label(self):
+        new_city = Attribute(title="New City", dataType="VARCHAR(30)")
+        new_name = Label(title="New Name", reference="city")
+        alt = AlterColumn(
+            schema_name=self.dataset.schema_name, col_name="city",
+            column=self.dataset.city, new_column=new_city
+        )
+        alt2 = AlterColumn(
+            schema_name=self.dataset.schema_name, col_name="name",
+            column=self.dataset.name, new_column=new_name, label_references_cp=False
+        )
+
+        self.assertTrue(alt.alteration_state['simple'])
+        self.assertFalse(alt2.alteration_state['simple'])
+        self.assertTrue(alt.alteration_state['same_columns'])
+        self.assertDictEqual(alt.new_attrs, {'title': 'New City', 'dataType': 'VARCHAR(30)'})
+
+        class CityMigration(MigrationChain):
+            chain = [alt, alt2]
+
+        city_migration = CityMigration(project=self.project)
+        city_migration.execute()
+
+        self.assertTrue(self.dataset.has_attribute('city', title='New City'))
+        self.assertTrue(self.dataset.has_label('name', title='New Name'))
+
+    def test_alter_hyperlink(self):
+        name_hyperlink = HyperLink(title='Name', reference='department')
+        alt = AlterColumn(
+            schema_name=self.dataset.schema_name, col_name="name",
+            column=self.dataset.name, new_column=name_hyperlink
+        )
+
+        self.assertFalse(alt.alteration_state['same_columns'])
+        self.assertTrue(alt.alteration_state['hyperlink'])
+
+        class HyperlinkMigration(MigrationChain):
+            chain = [alt, ]
+
+        hyperlink_migration = HyperlinkMigration(project=self.project)
+        hyperlink_migration.execute()
+
+        self.assertTrue(self.dataset.has_hyperlink('name', title='Name'))
+
+    def test_alter_date_facts(self):
+        worker = examples.examples[1][1](self.project)
+        salary = examples.examples[2][1](self.project)
+        worker.create()
+        salary.create()
+
+        new_payment = Fact(title='New Payment', dataType='BIGINT')
+        new_payday = Date(title='New payday', format='yyyy-MM-dd', schemaReference='payment')
+        alt = AlterColumn(
+            schema_name=salary.schema_name, col_name="payment",
+            column=salary.payment, new_column=new_payment
+        )
+        alt2 = AlterColumn(
+            schema_name=salary.schema_name, col_name="payday",
+            column=salary.payday, new_column=new_payday
+        )
+
+        class SalaryMigration(MigrationChain):
+            chain = [alt, alt2]
+
+        salary_migration = SalaryMigration(project=self.project)
+        salary_migration.execute()
+
+        self.assertTrue(salary.has_fact('payment', title='New Payment'))
+        self.assertTrue(salary.has_date('payday', title='New payday (Date)'))
+
+        other_date = Date(title='Payday 2', format='yyyy-MM-dd HH:mm:SS', schemaReference='new_payment', datetime=True)
+        alt = AlterColumn(
+            schema_name=salary.schema_name, col_name="payday",
+            column=salary.payday, new_column=other_date
+        )
+
+        class ComplexDate(MigrationChain):
+            chain = [alt, ]
+
+        complex_date = ComplexDate(project=self.project)
+        complex_date.execute()
+
+        self.assertTrue(salary.has_date('payday', title='Payday 2 (Date)'))
+        self.assertFalse(salary.has_date('payday', title='Pay Day'))
 
 
 if __name__ == '__main__':

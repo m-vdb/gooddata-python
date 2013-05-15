@@ -21,7 +21,7 @@ class DictDiffer(object):
                 new_state[key] = self.new_dict[key]
                 old_state[key] = self.old_dict[key]
 
-        return new_state, old_state
+        return new_state
 
 
 def get_changed_attributes(new_dict, old_dict):
