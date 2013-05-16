@@ -1,3 +1,4 @@
+import re
 from xml.dom.minidom import parseString
 
 from gooddataclient.columns import (
@@ -80,24 +81,65 @@ def retrieve_fact_tuples(column_json):
         category = 'date'
         column_title = column_json['meta']['title'].replace(' (Date)', '')
     else:
-        identifier.pop(0)
-        category = 'time'
+        return []
 
     _, dataset, column_name = identifier
 
-    # in case of datetime = True
-    if category == 'time':
-        return [('%s__time' % column_name, ('datetime', True))]
-
     if category == 'date':
-        # FIXME: need dlc to have reference
-        return [(column_name, Date(title=column_title, format='yyyy-MM-dd'))]
+        datetime = dlc_info.get('%s__time' % column_name, {}).get('datetime', False)
+        date_format = 'yyyy-MM-dd'
+        if datetime:
+            date_format = 'yyyy-MM-dd HH:mm:SS'
+        return [
+            (column_name, Date(
+                    title=column_title, format=date_format,
+                    schemaReference=dlc[column_name]['schemaReference'],
+                    datetime=datetime
+            ))
+        ]
+    data_type = dlc_info.get(column_name, {}).get('dataType', None)
+    return [(column_name, Fact(title=column_title, dataType=data_type))]
 
-    return [(column_name, Fact(title=column_title))]
 
-
-def retrieve_dlc_info(column_json):
+def retrieve_dlc_info(dataset_name, column_json, sli_manifest):
     """
     A function to retrieve information about data loading column.
     """
-    return []
+    identifier = column_json['meta']['identifier']
+    column_type = column_json['content']['columnType']
+    column_length = column_json['content']['columnLength']
+    precision = column_json['content']['columnPrecision']
+
+    precision = ',%s' % precision if precision else ''
+    if column_length:
+        data_type = '%s(%s%s)' % (column_type, column_length, precision)
+    else:
+        data_type = column_type
+
+    match = re.match("d_[a-z_]+\.nm_([a-z_]+)", identifier)
+    match_cp = re.match("f_[a-z_]+\.nm_([a-z_]+)", identifier)
+    match_dt = re.match("f_%s\.dt_([a-z_]+)_id" % dataset_name, identifier)
+    match_tm = re.match("f_%s\.tm_([a-z_]+)" % dataset_name, identifier)
+
+    match = match or match_cp
+    if match:
+        return (match.group(1), {
+            'dataType': data_type
+        })
+
+    # retrieve datetime = True if needed
+    if match_tm:
+        return ('%s__time' % match_tm.group(1), {
+            'datetime': True
+        })
+
+    # retrieve the date reference
+    if match_dt:
+        for part in sli_manifest:
+            if part['columnName'] == identifier:
+                schema_ref, _, __ = part['populates'][0].split('.')
+                return (match_dt.group(1), {
+                    'schemaReference': schema_ref
+                })
+
+    return None
