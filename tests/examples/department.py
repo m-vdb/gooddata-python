@@ -3,8 +3,8 @@ from gooddataclient import columns
 
 class Department(Dataset):
 
-    department = columns.ConnectionPoint(title='Department', folder='Department')
-    name = columns.Label(title='Name', reference='department', folder='Department')
+    department = columns.ConnectionPoint(title='Department', folder='Department', dataType='VARCHAR(128)')
+    name = columns.Label(title='Name', reference='department', folder='Department', dataType='VARCHAR(128)')
     city = columns.Attribute(title='City', folder='Department', dataType='VARCHAR(20)')
 
     def data(self):

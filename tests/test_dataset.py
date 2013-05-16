@@ -114,15 +114,23 @@ class TestDataset(unittest.TestCase):
         self.assertFalse(department.has_date('birthday'))
 
     def test_remote_columns(self):
-        department = examples.examples[0][1](self.project)
-        department.create()
-        # worker = examples.examples[1][1](self.project)
-        # worker.create()
-        # salary = examples.examples[2][1](self.project)
-        # salary.create()
-        
-        columns = department.get_remote_columns()
+        for (example, ExampleDataset) in examples.examples:
+            dataset = ExampleDataset(self.project)
+            dataset.create()
 
+        for (example, ExampleDataset) in examples.examples:
+            dataset = ExampleDataset(self.project)
+            columns = dataset.get_remote_columns()
+
+            for col_name, col in columns.iteritems():
+                dataset_col = getattr(dataset, col_name)
+                self.assertIs(type(col), type(dataset_col))
+                self.assertEqual(col.title, dataset_col.title)
+                self.assertEqual(col.dataType, dataset_col.dataType)
+                self.assertEqual(col.reference, dataset_col.reference)
+                self.assertEqual(col.datetime, dataset_col.datetime)
+
+            # TODO: be sure that all the columns of the dataset are in columns
 
 
 if __name__ == '__main__':

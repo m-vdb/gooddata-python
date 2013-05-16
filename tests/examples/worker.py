@@ -5,9 +5,9 @@ from gooddataclient.columns import ConnectionPoint, Label, Reference
 
 class Worker(Dataset):
 
-    worker = ConnectionPoint(title='Worker', folder='Worker')
-    firstname = Label(title='First Name', reference='worker', folder='Worker')
-    lastname = Label(title='Last Name', reference='worker', folder='Worker')
+    worker = ConnectionPoint(title='Worker', folder='Worker', dataType='VARCHAR(128)')
+    firstname = Label(title='First Name', reference='worker', folder='Worker', dataType='VARCHAR(128)')
+    lastname = Label(title='Last Name', reference='worker', folder='Worker', dataType='VARCHAR(128)')
     department = Reference(title='Department', reference='department', schemaReference='Department', folder='Worker')
 
     class Meta(Dataset.Meta):

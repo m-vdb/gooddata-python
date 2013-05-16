@@ -9,9 +9,9 @@ payment_date = datetime(2006,1,1)
 
 class Salary(Dataset):
 
-    salary = ConnectionPoint(title='Salary', folder='Salary')
+    salary = ConnectionPoint(title='Salary', folder='Salary', dataType='VARCHAR(128)')
     worker = Reference(title='Worker', reference='worker', schemaReference='Worker', folder='Salary')
-    payment = Fact(title='Payment', folder='Salary')
+    payment = Fact(title='Payment', folder='Salary', dataType='INT')
     payday = Date(title='Pay Day', format='yyyy-MM-dd', schemaReference='payment', folder='Salary')
 
     class Meta(Dataset.Meta):
