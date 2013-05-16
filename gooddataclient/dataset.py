@@ -15,7 +15,7 @@ from gooddataclient.archiver import CSV_DATA_FILENAME
 from gooddataclient.schema.maql import (
     SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
 )
-from gooddataclient.schema.utils import retrieve_column_tuples
+from gooddataclient.schema.utils import retrieve_column_tuples, retrieve_dlc_info
 
 logger = logging.getLogger("gooddataclient")
 
@@ -147,18 +147,29 @@ class Dataset(object):
         Returns a dictionary of `column_name`: Column
         """
         column_uris = self.get_column_uris()
+        sli_manifest = self.get_remote_sli_manifest()
         remote_columns = []
         categories = ['attributes', 'fact']
 
+        # TODO: get references
+
+        dlc_info = []
+        # dataLoadingColumns
+        for column_uri in column_uris['dataLoadingColumns']:
+            column_json = self.get_column_detail(column_uri)
+            info = retrieve_dlc_info(self.identifier, column_json, sli_manifest)
+            if info:
+                dlc_info.append(info)
+        dlc_info = dict(dlc_info)
+
+        # attributes, facts, dates, labels, hyperlinks
         for category in categories:
             for column_uri in column_uris.get(category, []):
                 column_json = self.get_column_detail(column_uri)
                 pk_identifier = self.get_column_pk_identifier(column_json)
                 remote_columns.extend(
-                    retrieve_column_tuples(column_json, category, pk_identifier)
+                    retrieve_column_tuples(column_json, category, pk_identifier, dlc_info)
                 )
-
-        # dataLoadingColumns
 
         return dict(remote_columns)
 
