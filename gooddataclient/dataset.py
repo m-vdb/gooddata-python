@@ -23,6 +23,7 @@ logger = logging.getLogger("gooddataclient")
 class Dataset(object):
 
     DATASETS_URI = '/gdc/md/%s/data/sets'
+    SLI_URI = '/gdc/md/%s/ldm/singleloadinterface/dataset.%s/manifest'
 
     def __init__(self, project=None):
         self.project = project
@@ -59,6 +60,10 @@ class Dataset(object):
     @property
     def schema_name(self):
         return self.Meta.schema_name or self.__class__.__name__
+
+    @property
+    def identifier(self):
+        return to_identifier(self.schema_name)
 
     @property
     def project_name(self):
@@ -309,6 +314,16 @@ class Dataset(object):
                     if (column.folder, column.folder_title) not in fact_folders:
                         fact_folders.append((column.folder, column.folder_title))
         return attribute_folders, fact_folders
+
+    def get_remote_sli_manifest(self):
+        """
+        A function to retrieve the remote SLI manifest, useful
+        to make comparisons with the local dataset.
+        """
+        return self.connection.get(
+            uri=self.SLI_URI % (self.project.id, self.identifier)
+        ).json()['dataSetSLIManifest']['parts']
+
 
     def get_sli_manifest(self, full_upload=False):
         '''Create JSON manifest from columns in schema.
