@@ -15,7 +15,7 @@ from gooddataclient.archiver import CSV_DATA_FILENAME
 from gooddataclient.schema.maql import (
     SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
 )
-
+from gooddataclient.schema.utils import retrieve_column_tuples
 
 logger = logging.getLogger("gooddataclient")
 
@@ -104,20 +104,58 @@ class Dataset(object):
 
         return content_json
 
-    def get_column_detail(self, uri, dlc=False):
+    def get_column_detail(self, uri):
         """
         A function to retrieve the details of a column,
         given its uri.
         """
         column_json = self.connection.get(uri=uri).json()
 
-        if dlc:
-            return column_json['dataLoadingColumn']
-
         try:
-            return column_json['attribute']
+            return column_json['dataLoadingColumn']
         except KeyError:
-            return column_json['fact']
+            try:
+                return column_json['attribute']
+            except KeyError:
+                return column_json['fact']
+
+    def get_column_pk_identifier(self, column_json):
+        """
+        A function to get the column pk identifier (GD naming...),
+        required to check that an attribute is a connection point
+        or not.
+        """
+        try:
+            pk_uri = column_json['content']['pk'][0]['data']
+        except KeyError:
+            return None
+
+        pk_json = self.connection.get(uri=pk_uri).json()
+
+        return pk_json['column']['meta']['identifier']
+
+    def get_remote_columns(self):
+        """
+        A function to retrieve the columns that are on
+        gooddata, in case they changed.
+
+        Returns a dictionary of `column_name`: Column
+        """
+        column_uris = self.get_column_uris()
+        remote_columns = []
+        categories = ['attributes', 'fact']
+
+        for category in categories:
+            for column_uri in column_uris.get(category, []):
+                column_json = self.get_column_detail(column_uri)
+                pk_identifier = self.get_column_pk_identifier(column_json)
+                remote_columns.extend(
+                    retrieve_column_tuples(column_json, category, pk_identifier)
+                )
+
+        # dataLoadingColumns
+
+        return dict(remote_columns)
 
     def has_column(self, col_name, attribute=False, fact=False, date=False, reference=False, title=None):
         """
@@ -159,7 +197,7 @@ class Dataset(object):
         }
 
         for col_uri in col_uris:
-            col_json = self.get_column_detail(col_uri, reference)
+            col_json = self.get_column_detail(col_uri)
             if col_json['meta']['identifier'] == col_identifier:
                 if (not title or (title and col_json['meta']['title'] == title)):
                     return True
