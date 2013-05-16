@@ -113,6 +113,17 @@ class TestDataset(unittest.TestCase):
         self.assertFalse(salary.has_date('expires_at'))
         self.assertFalse(department.has_date('birthday'))
 
+    def test_remote_columns(self):
+        department = examples.examples[0][1](self.project)
+        department.create()
+        # worker = examples.examples[1][1](self.project)
+        # worker.create()
+        # salary = examples.examples[2][1](self.project)
+        # salary.create()
+        
+        columns = department.get_remote_columns()
+
+
 
 if __name__ == '__main__':
     unittest.main()
