@@ -22,7 +22,7 @@ def get_xml_schema(dataset):
     return dom.toxml()
 
 
-def retrieve_column_tuples(column_json, category, pk_identifier):
+def retrieve_column_tuples(column_json, category, pk_identifier, dlc_info):
     """
     A utility function, that, given a column_json, returns
     a tuple of `column_name`, `Column`.
@@ -31,42 +31,57 @@ def retrieve_column_tuples(column_json, category, pk_identifier):
     :param category:        the category of the column
                             (fact, attribute)
     :param pk_identifier:   the pk identifier of the column (None for facts)
+    :param dlc_info:        additional information to find references / dataTypes
     """
     if category == 'attributes':
-        return retrieve_attr_tuples(column_json, pk_identifier)
-    return retrieve_fact_tuples(column_json)
+        return retrieve_attr_tuples(column_json, pk_identifier, dlc_info)
+    return retrieve_fact_tuples(column_json, dlc_info)
 
 
-def retrieve_attr_tuples(column_json, pk_identifier):
+def retrieve_attr_tuples(column_json, pk_identifier, dlc_info):
     """
     Retrive a tuple of `attr_name`, `Attribute` from a json.
     It will also retrieve labels / hyperlink tuples.
     """
     _, dataset, column_name = column_json['meta']['identifier'].split('.')
     column_title = column_json['meta']['title']
-
     tuples = []
-    default_label = 'label.%s.%s' % (dataset, column_nameq)
+
+    # manage labels and hyperlinks
+    default_label = 'label.%s.%s' % (dataset, column_name)
     for label_json in column_json['content']['displayForms']:
         if label_json['meta']['identifier'] == default_label:
             continue
 
         _, __, label_reference, label_name = label_json['meta']['identifier'].split('.')
         label_title = label_json['meta']['title']
-        # FIXME: have DLC before + HyperLink
-        tuples.append((label_name, Label(title=label_title, reference=label_reference)))
+        label_type = label_json['content'].get('type', None)
+        data_type= dlc_info.get(label_name, {}).get('dataType', None)
+
+        if label_type == 'GDC.link':
+            label_column = HyperLink(
+                title=label_title, reference=label_reference,
+                dataType=data_type
+            )
+        else:
+            label_column = Label(
+                title=label_title, reference=label_reference,
+                dataType=data_type
+            )
+        tuples.append((label_name, label_column))
 
     # ConnectionPoint or Attribute
     cp_identifier = 'col.f_%s.id' % dataset
+    data_type = dlc_info.get(column_name, {}).get('dataType', None)
     if pk_identifier == cp_identifier:
-        tuples.append((column_name, ConnectionPoint(title=column_title)))
+        tuples.append((column_name, ConnectionPoint(title=column_title, dataType=data_type)))
     else:
-        tuples.append((column_name, Attribute(title=column_title)))
+        tuples.append((column_name, Attribute(title=column_title, dataType=data_type)))
 
     return tuples
 
 
-def retrieve_fact_tuples(column_json):
+def retrieve_fact_tuples(column_json, dlc_info):
     """
     Retrive a tuple of `fact_name`, `Fact` from a json. The fact
     can also be a date.
