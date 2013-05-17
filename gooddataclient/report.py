@@ -1,8 +1,6 @@
 import logging
 
-from requests.exceptions import (
-    HTTPError, ConnectionError
-)
+from requests.exceptions import HTTPError, ConnectionError
 
 from gooddataclient.exceptions import (
     GoodDataTotallyDown, ReportExecutionFailed,
@@ -14,22 +12,29 @@ logger = logging.getLogger("gooddataclient")
 
 
 class Report(object):
+    '''
+    This class represents a GD report.
+    Use it to programatically export a GD report
+    as a csv
+    '''
 
-    REPORTS_URI = '/gdc/md/%s/query/reports'
     REPORT_DEFINITION_URI = '/gdc/md/%(project)s/obj/%(report)s'
     REPORT_EXEC_URI = '/gdc/xtab2/executor3'
     REPORT_EXPORT_URI = '/gdc/exporter/executor'
-    PULL_URI = '/gdc/md/%s/etl/pull'
 
-    def __init__(self, connection, project, id):
-        self.connection = connection
+    def __init__(self, project, id):
         self.project = project
+        self.connection = project.connection
         self.id = id
-        self.execResult = None
-        self.export_download_URI = None
+        self.exec_result = None
+        self.export_download_uri = None
         self.report_content = None
 
     def execute_report(self):
+        '''
+        Use this method to retrieve a report's information
+        given a report id.
+        '''
         report_definition = self.REPORT_DEFINITION_URI % {
             'project': self.project.id,
             'report': self.id
@@ -42,7 +47,6 @@ class Report(object):
             }
             response = self.connection.post(uri=self.REPORT_EXEC_URI, data=request_data)
             response.raise_for_status()
-            self.execResult = response.json()
         except HTTPError, err:
             err_json = err.response.json()['error']
             raise ReportExecutionFailed(
@@ -51,20 +55,24 @@ class Report(object):
             )
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
+        self.exec_result = response.json()
 
     def export_report(self):
-        if not self.execResult:
+        '''
+        Use this method to retrieve the report's data uri.
+        Stores the uri in export_download_uri.
+        '''
+        if not self.exec_result:
             self.execute_report()
         try:
             request_data = {
                 "result_req": {
                     "format": "csv",
-                    "result": self.execResult
+                    "result": self.exec_result
                 }
             }
             response = self.connection.post(uri=self.REPORT_EXPORT_URI, data=request_data)
             response.raise_for_status()
-            self.export_download_URI = response.json()['uri']
         except HTTPError, err:
             err_json = err.response.json()['error']
             raise ReportExportFailed(
@@ -73,15 +81,20 @@ class Report(object):
             )
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
+        self.export_download_uri = response.json()['uri']
 
     def get_report(self):
+        '''
+        Use this method to retrieve the report's data.
+        Stores the data in report_content.
+        '''
         if self.report_content:
             return self.report_content
 
-        if not self.export_download_URI:
+        if not self.export_download_uri:
             self.export_report()
         try:
-            self.report_content = self.connection.get(self.export_download_URI).text
+            self.report_content = self.connection.get(self.export_download_uri).text
         except HTTPError, err:
             err_json = err.response.json()['error']
             raise ReportRetrievalFailed(
@@ -92,6 +105,10 @@ class Report(object):
             raise GoodDataTotallyDown(err.message)
 
     def save_report(self, file_path):
+        '''
+        Use this method to save the report's data
+        in a given file.
+        '''
         if not self.report_content:
             self.get_report()
         with open(file_path, 'w') as f:
