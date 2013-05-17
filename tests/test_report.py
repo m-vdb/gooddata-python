@@ -1,5 +1,6 @@
 import sys
 import unittest
+import os
 
 from gooddataclient.connection import Connection
 from gooddataclient.project import Project
@@ -38,7 +39,16 @@ class TestReport(unittest.TestCase):
         self.assertTrue(report.report_content)
         self.assertTrue("Page Id" in report.report_content)
 
-
+    def test_save_report(self):
+        report = Report(self.connection, self.project, TEST_REPORT_ID)
+        file_path = './test_report.txt'
+        report.save_report(file_path)
+        try:
+            with open(file_path):
+                pass
+        except IOError:
+                self.assertTrue(False)
+        os.remove(file_path)
 
 if __name__ == '__main__':
     unittest.main()

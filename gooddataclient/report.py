@@ -77,7 +77,7 @@ class Report(object):
     def get_report(self):
         if self.report_content:
             return self.report_content
-        
+
         if not self.export_download_URI:
             self.export_report()
         try:
@@ -90,3 +90,9 @@ class Report(object):
             )
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
+
+    def save_report(self, file_path):
+        if not self.report_content:
+            self.get_report()
+        with open(file_path, 'w') as f:
+            f.write(self.report_content)
