@@ -9,12 +9,11 @@ from gooddataclient.exceptions import (
     DataSetNotFoundError, MaqlValidationFailed, ProjectNotOpenedError,
     ProjectNotFoundError, DMLExecutionFailed, GoodDataTotallyDown
 )
+from credentials import test_project_name
 
 from tests.credentials import password, username, gd_token
 from tests import examples, logger
 
-
-TEST_PROJECT_NAME = 'gdc_unittest'
 logger.set_log_level(debug=('-v' in sys.argv))
 
 
@@ -24,27 +23,27 @@ class TestProject(unittest.TestCase):
         self.connection = Connection(username, password)
         if not gd_token:
             raise ValueError('You should define either project_id or gd_token in credentials.py')
-        delete_projects_by_name(self.connection, TEST_PROJECT_NAME)
+        delete_projects_by_name(self.connection, test_project_name)
 
     def test_create_and_delete_project(self):
-        project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        project = Project(self.connection).create(test_project_name, gd_token)
         self.assert_(project is not None)
         self.assert_(project.id is not None)
 
         project.delete()
         self.assertRaises(ProjectNotOpenedError, project.delete)
         self.assertRaises(ProjectNotFoundError, project.load,
-                          name=TEST_PROJECT_NAME)
+                          name=test_project_name)
 
     def test_validate_maql(self):
-        project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        project = Project(self.connection).create(test_project_name, gd_token)
 
         self.assertRaises(MaqlValidationFailed, project.execute_maql, 'CREATE DATASET {dat')
         self.assertRaises(AttributeError, project.execute_maql, '')
         project.delete()
 
     def test_execute_dml(self):
-        project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        project = Project(self.connection).create(test_project_name, gd_token)
 
         self.assertRaises(DMLExecutionFailed, project.execute_dml, 'DELETE _%$;')
         self.assertRaises(DMLExecutionFailed, project.execute_dml, '')
@@ -59,7 +58,7 @@ class TestProject(unittest.TestCase):
 
     def test_gooddata_totally_down_exception(self):
         self.connection.HOST = 'http://toto'
-        self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, TEST_PROJECT_NAME, gd_token)
+        self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, test_project_name, gd_token)
 
 
 if __name__ == '__main__':
