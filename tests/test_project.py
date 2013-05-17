@@ -1,17 +1,14 @@
 import sys
 import unittest
-import requests
 
-from requests.exceptions import ConnectionError
 from gooddataclient.connection import Connection
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.exceptions import (
-    DataSetNotFoundError, MaqlValidationFailed, ProjectNotOpenedError,
+    MaqlValidationFailed, ProjectNotOpenedError,
     ProjectNotFoundError, DMLExecutionFailed, GoodDataTotallyDown
 )
-from credentials import test_project_name
 
-from tests.credentials import password, username, gd_token
+from tests.credentials import password, username, gd_token, test_project_name
 from tests import examples, logger
 
 logger.set_log_level(debug=('-v' in sys.argv))
