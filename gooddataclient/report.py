@@ -109,7 +109,6 @@ class Report(object):
         if self.report_content[0] == '{':
             time.sleep(0.5)
             self.get_report()
-        print self.connection.get(self.export_download_uri).text[:100]
 
     def save_report(self, file_path):
         '''
