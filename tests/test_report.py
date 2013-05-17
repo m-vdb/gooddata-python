@@ -33,7 +33,7 @@ class TestReport(unittest.TestCase):
         report = Report(self.project, test_report_id)
         report.get_report()
         self.assertTrue(report.report_content)
-        self.assertTrue("Page Id" in report.report_content)
+        self.assertFalse(report.report_content[0] == '{')
 
     def test_save_report(self):
         report = Report(self.project, test_report_id)

@@ -1,4 +1,6 @@
+import time
 import logging
+import json
 
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -88,7 +90,7 @@ class Report(object):
         Use this method to retrieve the report's data.
         Stores the data in report_content.
         '''
-        if self.report_content:
+        if self.report_content and not self.report_content[0] == '{':
             return self.report_content
 
         if not self.export_download_uri:
@@ -103,6 +105,11 @@ class Report(object):
             )
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
+
+        if self.report_content[0] == '{':
+            time.sleep(0.5)
+            self.get_report()
+        print self.connection.get(self.export_download_uri).text[:100]
 
     def save_report(self, file_path):
         '''
