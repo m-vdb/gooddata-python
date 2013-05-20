@@ -10,7 +10,7 @@ from requests.exceptions import (
 from gooddataclient.exceptions import (
     AuthenticationError, GoodDataTotallyDown, get_api_msg
 )
-from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME, DLI_MANIFEST_FILENAME
+from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME
 
 logger = logging.getLogger("gooddataclient")
 
@@ -44,7 +44,6 @@ class Connection(object):
         }
         r1 = self.post(uri=self.LOGIN_URI, data=data, login=True,
                        raise_cls=AuthenticationError)
-        r1.raise_for_status()
         self.cookies = self.webdav.cookies = r1.cookies
         self.get(uri=self.TOKEN_URI, raise_cls=AuthenticationError)
 
