@@ -8,8 +8,7 @@ from gooddataclient.columns import Reference
 from gooddataclient.dataset import DateDimension, Dataset
 from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
-from tests.credentials import password, username, project_id, gd_token
-from tests.test_project import TEST_PROJECT_NAME
+from tests.credentials import password, username, gd_token, test_project_name
 from tests import logger, examples
 
 
@@ -20,7 +19,7 @@ class TestDataset(unittest.TestCase):
 
     def setUp(self):
         self.connection = Connection(username, password)
-        self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        self.project = Project(self.connection).create(test_project_name, gd_token)
 
     def tearDown(self):
         self.project.delete()

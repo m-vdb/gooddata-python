@@ -13,9 +13,8 @@ from gooddataclient.schema.maql import SYNCHRONIZE
 from gooddataclient.text import to_identifier
 
 from tests import logger, examples
-from tests.credentials import username, password, gd_token
+from tests.credentials import username, password, gd_token, test_project_name
 from tests.examples.country import Country
-from tests.test_project import TEST_PROJECT_NAME
 
 
 logger.set_log_level(debug=('-v' in sys.argv))
@@ -25,8 +24,8 @@ class TestMigration(unittest.TestCase):
 
     def setUp(self):
         connection = Connection(username, password)
-        delete_projects_by_name(connection, TEST_PROJECT_NAME)
-        self.project = Project(connection).create(TEST_PROJECT_NAME, gd_token)
+        delete_projects_by_name(connection, test_project_name)
+        self.project = Project(connection).create(test_project_name, gd_token)
         department, Department = examples.examples[0]
         self.dataset = Department(self.project)
         self.dataset.create()
