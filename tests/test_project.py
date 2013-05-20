@@ -66,7 +66,7 @@ class TestProject(unittest.TestCase):
             try:
                 str(err)
             except TypeError, e:
-                self.fail('GoodDataTotallyDown.__str__(): unexpected exception: %s' % e)
+                self.fail('str(GoodDataTotallyDown): unexpected exception: %s' % e)
 
 
 if __name__ == '__main__':
