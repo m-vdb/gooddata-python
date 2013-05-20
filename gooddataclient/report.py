@@ -90,7 +90,7 @@ class Report(object):
         Use this method to retrieve the report's data.
         Stores the data in report_content.
         '''
-        if self.report_content and not self.report_content[0] == '{':
+        if self.report_is_ready():
             return self.report_content
 
         if not self.export_download_uri:
@@ -106,7 +106,7 @@ class Report(object):
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
 
-        if self.report_content[0] == '{':
+        if not self.report_is_ready():
             time.sleep(0.5)
             self.get_report()
 
@@ -119,3 +119,7 @@ class Report(object):
             self.get_report()
         with open(file_path, 'w') as f:
             f.write(self.report_content)
+
+    def report_is_ready(self):
+        report_content = self.report_content or ''
+        return report_content and report_content[0] != '{'
