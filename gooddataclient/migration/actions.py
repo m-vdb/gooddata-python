@@ -86,7 +86,7 @@ class AlterColumn(Action):
             self.new_column.references_cp = self.column.references_cp
         # in other case, that means that we explicitely want
         # to change this attribute
-        else:
+        elif self.new_column.references_cp is None:
             self.new_column.references_cp = self.label_references_cp
 
         self.new_attrs = get_changed_attributes(self.new_column.__dict__, self.column.__dict__)
