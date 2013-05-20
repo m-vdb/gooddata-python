@@ -415,21 +415,15 @@ class DateDimension(object):
         It is only call if we want to create the date dimension
         using a name.
         """
+        err_msg = 'Could not check if date exists: %(status_code)s'
+        response = self.connection.get(self.DATASETS_URI % self.project.id,
+                                       raise_cls=MaqlValidationFailed,
+                                       err_msg=err_msg)
         try:
-            response = self.connection.get(self.DATASETS_URI % self.project.id)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_msg = 'Could not check if date exists: %(status_code)s'
-            raise MaqlValidationFailed(
-                err_msg, response=err.response,
-                status_code=err.response.status_code
-            )
-        else:
-            try:
-                sets = response.json()['dataSetsInfo']['sets']
-            except KeyError:
-                sets = []
-            return bool(filter(lambda x: x['meta']['identifier'] == '%s.dataset.dt' % name.lower(), sets))
+            sets = response.json()['dataSetsInfo']['sets']
+        except KeyError:
+            sets = []
+        return bool(filter(lambda x: x['meta']['identifier'] == '%s.dataset.dt' % name.lower(), sets))
 
     def upload_time(self, name):
         data = open(os.path.join(os.path.dirname(__file__), 'resources',

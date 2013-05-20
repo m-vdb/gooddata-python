@@ -8,7 +8,7 @@ from requests.exceptions import (
 from gooddataclient.exceptions import (
     ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
     get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed,
-    GoodDataTotallyDown
+    GoodDataTotallyDown, InvalidAPIQuery
 )
 
 logger = logging.getLogger("gooddataclient")
@@ -31,6 +31,7 @@ class Project(object):
     MAQL_VALID_URI = '/gdc/md/%s/maqlvalidator'
     PULL_URI = '/gdc/md/%s/etl/pull'
     DML_EXEC_URI = '/gdc/md/%s/dml/manage'
+    USING_URI = '/gdc/md/%s/using/%s'
 
     def __init__(self, connection):
         self.connection = connection
@@ -66,21 +67,13 @@ class Project(object):
         }
         if template_uri:
             request_data['project']['meta']['projectTemplate'] = template_uri
-        try:
-            response = self.connection.post(self.PROJECTS_URI, request_data)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_msg = 'Could not create project (%(name)s), status code: %(status_code)s'
-            raise ProjectCreationError(
-                err_msg, name=name, response=err.response.content,
-                status_code=err.response.status_code
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
-        else:
-            id = response.json()['uri'].split('/')[-1]
-            logger.debug("Created project name=%s with id=%s" % (name, id))
-            return self.load(id=id)
+
+        err_msg = 'Could not create project (%(name)s), status code: %(status_code)s'
+        response = self.connection.post(self.PROJECTS_URI, request_data,
+                                        raise_cls=MaqlValidationFailed, err_msg=err_msg)
+        id = response.json()['uri'].split('/')[-1]
+        logger.debug("Created project name=%s with id=%s" % (name, id))
+        return self.load(id=id)
 
     def delete(self):
         """Delete a GoodData project"""
@@ -109,39 +102,21 @@ class Project(object):
             raise AttributeError('MAQL missing, nothing to execute')
         data = {'expression': maql}
 
-        try:
-            response = self.connection.post(uri=self.MAQL_VALID_URI % self.id, data=data)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_msg = 'Could not access to remote validator: %(status_code)s'
-            raise MaqlValidationFailed(
-                err_msg, response=err.response.content,
-                status_code=err.response.status_code
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
-        else:
-            # verify response content
-            content = response.json()
-            if 'maqlOK' not in content:
-                err_msg = 'MAQL queries did not validate'
-                raise MaqlValidationFailed(err_msg, reponse=content)
+        err_msg = 'Could not access to remote validator: %(status_code)s'
+        response = self.connection.post(uri=self.MAQL_VALID_URI % self.id, data=data,
+                                        raise_cls=MaqlValidationFailed, err_msg=err_msg)
+        # verify response content
+        content = response.json()
+        if 'maqlOK' not in content:
+            err_msg = 'MAQL queries did not validate'
+            raise MaqlValidationFailed(err_msg, reponse=content)
 
     def execute_maql(self, maql, wait_for_finish=True):
         self.validate_maql(maql)
 
         data = {'manage': {'maql': maql}}
-        try:
-            response = self.connection.post(uri=self.MAQL_EXEC_URI % self.id, data=data)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_json = err.response.json()['error']
-            raise MaqlExecutionFailed(
-                get_api_msg(err_json), gd_error=err_json,
-                status_code=err.response.status_code, maql=maql
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
+        response = self.connection.post(uri=self.MAQL_EXEC_URI % self.id, data=data,
+                                        raise_cls=MaqlExecutionFailed)
         # It seems the API can retrieve several links
         task_uris = [entry['link'] for entry in response.json()['entries']]
 
@@ -158,17 +133,8 @@ class Project(object):
         """
         data = {'manage': {'maql': maql}}
 
-        try:
-            response = self.connection.post(uri=self.DML_EXEC_URI % self.id, data=data)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_json = err.response.json()['error']
-            raise DMLExecutionFailed(
-                get_api_msg(err_json), gd_error=err_json,
-                status_code=err.response.status_code, maql=maql
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
+        response = self.connection.post(uri=self.DML_EXEC_URI % self.id, data=data,
+                                        raise_cls=DMLExecutionFailed)
 
         uri = response.json()['uri']
         self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
@@ -190,8 +156,6 @@ class Project(object):
                     get_api_msg(err_json), gd_error=err_json,
                     status_code=status_code, dir_name=dir_name
                 )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
 
         task_uri = response.json()['pullTask']['uri']
 
@@ -223,3 +187,13 @@ class Project(object):
                 )
 
             time.sleep(0.5)
+
+    def get_using(self, object_id):
+        """
+        A function to retrieve all the objects that use
+        a given object (referenced by its object_id).
+        """
+        using_uri = self.USING_URI % (self.id, object_id)
+        response = self.connection.get(uri=using_uri,
+                                       raise_cls=InvalidAPIQuery)
+        return response.json()['using']['nodes']

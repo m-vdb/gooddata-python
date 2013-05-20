@@ -1,12 +1,8 @@
-import time
 import logging
-import json
-
-from requests.exceptions import HTTPError, ConnectionError
 
 from gooddataclient.exceptions import (
-    GoodDataTotallyDown, ReportExecutionFailed,
-    get_api_msg, ReportExportFailed, ReportRetrievalFailed
+    ReportExecutionFailed, ReportExportFailed,
+    ReportRetrievalFailed
 )
 
 
@@ -41,22 +37,13 @@ class Report(object):
             'project': self.project.id,
             'report': self.id
         }
-        try:
-            request_data = {
-                "report_req": {
-                    "report": report_definition
-                }
+        request_data = {
+            "report_req": {
+                "report": report_definition
             }
-            response = self.connection.post(uri=self.REPORT_EXEC_URI, data=request_data)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_json = err.response.json()['error']
-            raise ReportExecutionFailed(
-                get_api_msg(err_json), gd_error=err_json,
-                status_code=err.response.status_code, report_id=self.id
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
+        }
+        response = self.connection.post(uri=self.REPORT_EXEC_URI, data=request_data,
+                                        raise_cls=ReportExecutionFailed, report_id=self.id)
         self.exec_result = response.json()
 
     def export_report(self):
@@ -66,23 +53,16 @@ class Report(object):
         '''
         if not self.exec_result:
             self.execute_report()
-        try:
-            request_data = {
-                "result_req": {
-                    "format": "csv",
-                    "result": self.exec_result
-                }
+
+        request_data = {
+            "result_req": {
+                "format": "csv",
+                "result": self.exec_result
             }
-            response = self.connection.post(uri=self.REPORT_EXPORT_URI, data=request_data)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_json = err.response.json()['error']
-            raise ReportExportFailed(
-                get_api_msg(err_json), gd_error=err_json,
-                status_code=err.response.status_code, report_id=self.id
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
+        }
+        response = self.connection.post(uri=self.REPORT_EXPORT_URI, data=request_data,
+                                        raise_cls=ReportExportFailed, report_id=self.id)
+
         self.export_download_uri = response.json()['uri']
 
     def get_report(self):
@@ -90,25 +70,15 @@ class Report(object):
         Use this method to retrieve the report's data.
         Stores the data in report_content.
         '''
-        if self.is_ready:
+        if self.report_content:
             return self.report_content
 
         if not self.export_download_uri:
             self.export_report()
-        try:
-            self.report_content = self.connection.get(self.export_download_uri).text
-        except HTTPError, err:
-            err_json = err.response.json()['error']
-            raise ReportRetrievalFailed(
-                get_api_msg(err_json), gd_error=err_json,
-                status_code=err.response.status_code, report_id=self.id
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
-
-        if not self.is_ready:
-            time.sleep(0.5)
-            self.get_report()
+        response = self.connection.get(uri=self.export_download_uri,
+                                       raise_cls=ReportRetrievalFailed,
+                                       report_id=self.id)
+        self.report_content = response.text
 
     def save_report(self, file_path):
         '''
@@ -119,17 +89,3 @@ class Report(object):
             self.get_report()
         with open(file_path, 'w') as f:
             f.write(self.report_content)
-
-    @property
-    def is_ready(self):
-        '''
-        Calling GD to export a report can be long.
-        During the call and before the final response,
-        GD replies with the current URL.
-        report_content contains the current URL, which
-        starts with '{'
-        The report is ready when the response does not start
-        with '{'
-        '''
-        report_content = self.report_content or ''
-        return report_content and report_content[0] != '{'
