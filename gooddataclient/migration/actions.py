@@ -1,4 +1,4 @@
-from gooddataclient.columns import Label, HyperLink
+from gooddataclient.columns import Date, Reference, Label, HyperLink
 from gooddataclient.dataset import DateDimension
 from gooddataclient.exceptions import MigrationFailed
 from gooddataclient.migration.utils import get_changed_attributes
@@ -11,7 +11,7 @@ class Action(object):
     during a LDM migration.
     """
 
-    def __init__(self, schema_name, col_name, column, label_references_cp=False):
+    def __init__(self, schema_name, col_name, column, label_references_cp=None):
         """
         Initialize the action to execute.
 
@@ -64,7 +64,6 @@ class DeleteColumn(Action):
         return self.column.get_drop_maql(to_identifier(self.schema_name), self.col_name)
 
 
-# TODO: this shouldn't be here, it will be treated in ANA-460
 class AlterColumn(Action):
     SIMPLE_ALTER = set(['title', 'dataType'])
 
@@ -80,42 +79,64 @@ class AlterColumn(Action):
         """
         super(AlterColumn, self).__init__(*args, **kwargs)
         self.new_column = new_column
+        # if the user did not specify that the label references
+        # a connection point, that means that we copy it from the
+        # old column
+        if self.label_references_cp is None:
+            self.new_column.references_cp = self.column.references_cp
+        # in other case, that means that we explicitely want
+        # to change this attribute
+        else:
+            self.new_column.references_cp = self.label_references_cp
+
+        self.new_attrs = get_changed_attributes(self.new_column.__dict__, self.column.__dict__)
+        # we can't perform actions on folders (useless and painful)
+        self.new_attrs.pop('folder', None)
+        self.new_attrs.pop('folder_title', None)
+
+        self.alteration_state = self._alteration_state()
+        
+    def _alteration_state(self):
+        # if same column classes
+        same_columns = (
+            isinstance(self.column, self.new_column.__class__) &
+            isinstance(self.new_column, self.column.__class__)
+        )
+
+        # if Label -> HyperLink or the other way around
+        hyperlink = False
+        if not same_columns:
+            hyperlink = isinstance(self.column, Label) & isinstance(self.new_column, Label)
+
+        # if simple alteration
+        simple_alter = set(self.new_attrs).issubset(self.SIMPLE_ALTER)
+
+        # we cannot modify dataType or title of those two
+        invalid = False
+        if same_columns and simple_alter:
+            if isinstance(self.column, Reference):
+                invalid = True
+            elif isinstance(self.column, Date) and 'dataType' in self.new_attrs:
+                invalid = True
+
+        return {
+            'nb_changes': len(self.new_attrs) + hyperlink,
+            'simple': simple_alter,
+            'same_columns': same_columns,
+            'hyperlink': hyperlink,
+            'invalid': invalid,
+        }
 
     def get_maql(self):
-        new_attrs, old_attrs = get_changed_attributes(self.column.__dict__, self.new_column.__dict__)
+        if not self.alteration_state['nb_changes']:
+            return ''
 
-        # in the case of simple alteration
-        if set(new_attr.keys()).issubset(SIMPLE_ALTER):
+        hyperlink_change = self.alteration_state['simple'] & self.alteration_state['hyperlink']
 
-            # if strictly same columns
-            if isinstance(self.column, self.new_column.__class__) and \
-               isinstance(self.new_column, self.column.__class__):
-                return self.get_maql_same_columns(new_attrs)
-
-            # labels and hyperlinks are different
-            elif isinstance(self.column, Label) and isinstance(self.column, Label):
-                return self.get_maql_same_columns(new_attrs, hyperlink=True)
-
-        # FIXME : we need to be smarter than that, because some labels / hyperlink / references
-        #         might be dropped...
-        # complex cases: equivalent to Delete + Add
-        maql_delete = DeleteColumn(self.schema_name, self.col_name, self.column).get_maql()
-        maql_add = AddColumn(self.schema_name, self.col_name, self.new_column).get_maql()
-
-        return maql_delete + maql_add
-
-    def get_maql_same_columns(self, new_attributes, hyperlink=False):
-        """
-        A function to get the MAQL to migrate two columns of the same type.
-        The new_attributes and old_attributes are dictionaries which
-        contains the keys that differ from one column to another.
-
-        :param new_attributes:    the new column keys that are different
-                                  from the old column keys.
-        :param hyperlink:         a boolean that says if we need to
-                                  handle the case of a hyperlink.
-        """
-        return self.column.get_alter_maql(self.schema_name, self.col_name, new_attributes, hyperlink)
+        return self.column.get_alter_maql(
+            schema_name=to_identifier(self.schema_name), name=self.col_name,
+            new_attributes=self.new_attrs, hyperlink_change=hyperlink_change
+        )
 
 
 class DeleteRow(object):

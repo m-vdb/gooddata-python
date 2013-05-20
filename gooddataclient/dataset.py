@@ -24,9 +24,9 @@ class Dataset(object):
 
     DATASETS_URI = '/gdc/md/%s/data/sets'
 
-    def __init__(self, project):
+    def __init__(self, project=None):
         self.project = project
-        self.connection = project.connection
+        self.connection = project.connection if project else None
 
         # column initializations
         self._columns = []
@@ -119,7 +119,7 @@ class Dataset(object):
         except KeyError:
             return column_json['fact']
 
-    def has_column(self, col_name, attribute=False, date=False, reference=False):
+    def has_column(self, col_name, attribute=False, fact=False, date=False, reference=False, title=None):
         """
         A function to check that a dataset has a specific column
         (attribute or fact), saved on GoodData.
@@ -146,8 +146,10 @@ class Dataset(object):
         elif reference:
             prefix = 'f_'
             suffix = '_id'
-        else:
-            prefix = 'attr.' if attribute else 'fact.'
+        elif attribute:
+            prefix = 'attr.'
+        elif fact:
+            prefix = 'fact.'
 
         col_identifier = '%(prefix)s%(dataset)s.%(col_name)s%(suffix)s' % {
             'prefix': prefix,
@@ -159,19 +161,21 @@ class Dataset(object):
         for col_uri in col_uris:
             col_json = self.get_column_detail(col_uri, reference)
             if col_json['meta']['identifier'] == col_identifier:
-                return True
+                if (not title or (title and col_json['meta']['title'] == title)):
+                    return True
+
         return False
 
-    def has_attribute(self, attr_name):
-        return self.has_column(attr_name, attribute=True)
+    def has_attribute(self, attr_name, **kwargs):
+        return self.has_column(attr_name, attribute=True, **kwargs)
 
-    def has_fact(self, fact_name):
-        return self.has_column(fact_name, attribute=False)
+    def has_fact(self, fact_name, **kwargs):
+        return self.has_column(fact_name, fact=True, **kwargs)
 
-    def has_date(self, date_name):
-        return self.has_column(date_name, date=True)
+    def has_date(self, date_name, **kwargs):
+        return self.has_column(date_name, date=True, **kwargs)
 
-    def has_label(self, label_name):
+    def has_label(self, label_name, title=None, hyperlink=False):
         col_uris= self.get_column_uris()
         label_identifier_re = 'label\.%(dataset)s\.[a-zA-Z_]+\.%(label_name)s' % {
             'dataset': to_identifier(self.schema_name),
@@ -182,9 +186,15 @@ class Dataset(object):
             col_json = self.get_column_detail(col_uri)
             for display in col_json['content'].get('displayForms', []):
                 if re.match(label_identifier_re, display['meta']['identifier']):
-                    return True
+                    if (not title or (title and display['meta']['title'] == title)):
+                        if hyperlink and display['content'].get('type', '') != "GDC.link":
+                            return False
+                        return True
 
         return False
+
+    def has_hyperlink(self, *args, **kwargs):
+        return self.has_label(hyperlink=True, *args, **kwargs)
 
     def has_reference(self, reference_name):
         return self.has_column(reference_name, reference=True)

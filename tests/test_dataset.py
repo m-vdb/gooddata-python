@@ -7,16 +7,18 @@ from gooddataclient.connection import Connection
 from gooddataclient.dataset import DateDimension, Dataset
 from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
-from tests.credentials import password, username, project_id, gd_token
-from tests.test_project import TEST_PROJECT_NAME
-from tests import logger, examples, get_parser
+from tests.credentials import password, username, gd_token, test_project_name
+from tests import logger, examples
+
+
+logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestDataset(unittest.TestCase):
 
     def setUp(self):
         self.connection = Connection(username, password)
-        self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        self.project = Project(self.connection).create(test_project_name, gd_token)
 
     def tearDown(self):
         self.project.delete()
@@ -34,7 +36,6 @@ class TestDataset(unittest.TestCase):
             dataset_metadata = dataset.get_metadata(name=dataset.schema_name)
             self.assertTrue(dataset_metadata['dataUploads'])
             self.assertEquals('OK', dataset_metadata['lastUpload']['dataUploadShort']['status'])
-            # TODO: check different data for the upload
 
     def test_date_dimension(self):
         date_dimension = DateDimension(self.project)
@@ -113,7 +114,4 @@ class TestDataset(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()

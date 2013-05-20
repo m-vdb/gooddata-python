@@ -5,7 +5,10 @@ from xml.dom.minidom import parseString
 from gooddataclient.schema.utils import get_xml_schema
 from gooddataclient.project import Project
 
-from tests import logger, examples, get_parser
+from tests import logger, examples
+
+
+logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestSchema(unittest.TestCase):
@@ -15,7 +18,7 @@ class TestSchema(unittest.TestCase):
             schema = parseString(example.schema_xml.replace(' ', '').replace('\n', ''))
             dataset = ExampleDataset(Project(None))
             gen_schema = parseString(get_xml_schema(dataset))
-            # TODO: test for XML content (not so easily comparable)
+
             self.assertEqual(len(schema.childNodes), len(gen_schema.childNodes))
             self.assertEqual(len(schema.childNodes[0].childNodes), len(gen_schema.childNodes[0].childNodes),
                              '%s != %s' % (', '.join(n.nodeName for n in schema.childNodes[0].childNodes),
@@ -28,7 +31,4 @@ class TestSchema(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()
