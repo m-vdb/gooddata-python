@@ -8,7 +8,7 @@ from requests.exceptions import (
 from gooddataclient.exceptions import (
     ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
     get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed,
-    GoodDataTotallyDown, InvalidAPIQuery
+    GoodDataTotallyDown
 )
 
 logger = logging.getLogger("gooddataclient")
@@ -31,7 +31,6 @@ class Project(object):
     MAQL_VALID_URI = '/gdc/md/%s/maqlvalidator'
     PULL_URI = '/gdc/md/%s/etl/pull'
     DML_EXEC_URI = '/gdc/md/%s/dml/manage'
-    USING_URI = '/gdc/md/%s/using/%s'
 
     def __init__(self, connection):
         self.connection = connection
@@ -70,7 +69,7 @@ class Project(object):
 
         err_msg = 'Could not create project (%(name)s), status code: %(status_code)s'
         response = self.connection.post(self.PROJECTS_URI, request_data,
-                                        raise_cls=MaqlValidationFailed, err_msg=err_msg)
+                                        raise_cls=ProjectCreationError, err_msg=err_msg)
         id = response.json()['uri'].split('/')[-1]
         logger.debug("Created project name=%s with id=%s" % (name, id))
         return self.load(id=id)
@@ -187,13 +186,3 @@ class Project(object):
                 )
 
             time.sleep(0.5)
-
-    def get_using(self, object_id):
-        """
-        A function to retrieve all the objects that use
-        a given object (referenced by its object_id).
-        """
-        using_uri = self.USING_URI % (self.id, object_id)
-        response = self.connection.get(uri=using_uri,
-                                       raise_cls=InvalidAPIQuery)
-        return response.json()['using']['nodes']
