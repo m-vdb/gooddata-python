@@ -1,4 +1,6 @@
+import time
 import logging
+import json
 
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -88,7 +90,7 @@ class Report(object):
         Use this method to retrieve the report's data.
         Stores the data in report_content.
         '''
-        if self.report_content:
+        if self.is_ready:
             return self.report_content
 
         if not self.export_download_uri:
@@ -104,6 +106,10 @@ class Report(object):
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
 
+        if not self.is_ready:
+            time.sleep(0.5)
+            self.get_report()
+
     def save_report(self, file_path):
         '''
         Use this method to save the report's data
@@ -113,3 +119,17 @@ class Report(object):
             self.get_report()
         with open(file_path, 'w') as f:
             f.write(self.report_content)
+
+    @property
+    def is_ready(self):
+        '''
+        Calling GD to export a report can be long.
+        During the call and before the final response,
+        GD replies with the current URL.
+        report_content contains the current URL, which
+        starts with '{'
+        The report is ready when the response does not start
+        with '{'
+        '''
+        report_content = self.report_content or ''
+        return report_content and report_content[0] != '{'
