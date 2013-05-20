@@ -61,12 +61,12 @@ def retrieve_attr_tuples(column_json, pk_identifier, dlc_info):
         if label_type == 'GDC.link':
             label_column = HyperLink(
                 title=label_title, reference=label_reference,
-                dataType=data_type
+                dataType=data_type, references_cp=attr_is_cp(pk_identifier, dataset)
             )
         else:
             label_column = Label(
                 title=label_title, reference=label_reference,
-                dataType=data_type
+                dataType=data_type, references_cp=attr_is_cp(pk_identifier, dataset)
             )
         tuples.append((label_name, label_column))
 
