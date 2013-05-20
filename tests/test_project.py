@@ -54,11 +54,22 @@ class TestProject(unittest.TestCase):
         try:
             project.execute_dml('DELETE FROM {attr.department.department};')
         except DMLExecutionFailed, e:
-            self.fail('project.execute_dml: unexpected exception: %s' %e)
+            self.fail('project.execute_dml: unexpected exception: %s' % e)
 
     def test_gooddata_totally_down_exception(self):
         self.connection.HOST = 'http://toto'
         self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, TEST_PROJECT_NAME, gd_token)
+
+        # SSLError check
+        self.connection.HOST = 'https://kennethreitz.com'
+        self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, TEST_PROJECT_NAME, gd_token)
+        try:
+            Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        except GoodDataTotallyDown, err:
+            try:
+                err.__str__()
+            except TypeError, e:
+                self.fail('GoodDataTotallyDown.__str__(): unexpected exception: %s' % e)
 
 
 if __name__ == '__main__':
