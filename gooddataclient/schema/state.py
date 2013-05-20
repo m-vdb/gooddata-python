@@ -1,4 +1,5 @@
 from gooddataclient.columns import Reference
+from gooddataclient.exceptions import DataSetNotFoundError
 from gooddataclient.schema.utils import (
     retrieve_column_tuples, retrieve_dlc_info, get_references, attr_is_cp,
     get_user_cp_info, get_column_id

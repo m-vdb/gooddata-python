@@ -5,8 +5,7 @@ from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
 from gooddataclient.columns import Reference
 
-from tests.credentials import password, username, gd_token
-from tests.test_project import TEST_PROJECT_NAME
+from tests.credentials import password, username, gd_token, test_project_name
 from tests import logger, examples
 
 
@@ -17,8 +16,8 @@ class TestState(unittest.TestCase):
 
     def setUp(self):
         self.connection = Connection(username, password)
-        delete_projects_by_name(self.connection, TEST_PROJECT_NAME)
-        self.project = Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+        delete_projects_by_name(self.connection, test_project_name)
+        self.project = Project(self.connection).create(test_project_name, gd_token)
 
     def tearDown(self):
         self.project.delete()
