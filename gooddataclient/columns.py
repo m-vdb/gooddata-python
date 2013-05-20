@@ -43,6 +43,26 @@ class Column(object):
         # to know if they reference a connection point
         self.references_cp = references_cp
 
+    def __eq__(self, other):
+        """
+        Useful to compare two columns with ==.
+        """
+        return (
+            self.title == other.title &&
+            self.reference == other.reference &&
+            self.schemaReference == other.schemaReference &&
+            self.dataType == other.dataType &&
+            self.datetime == other.datetime &&
+            self.format == other.format &&
+            self.references_cp == other.references_cp
+        )
+
+    def __ne__(self, other):
+        """
+        Useful to compare two columns with !=.
+        """
+        return not self == other
+
     def __getitem__(self, item):
         """
         Useful to do something like `'my string %(format)s' % self`.
