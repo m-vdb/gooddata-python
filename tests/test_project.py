@@ -59,9 +59,9 @@ class TestProject(unittest.TestCase):
 
         # SSLError check
         self.connection.HOST = 'https://kennethreitz.com'
-        self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, TEST_PROJECT_NAME, gd_token)
+        self.assertRaises(GoodDataTotallyDown, Project(self.connection).create, test_project_name, gd_token)
         try:
-            Project(self.connection).create(TEST_PROJECT_NAME, gd_token)
+            Project(self.connection).create(test_project_name, gd_token)
         except GoodDataTotallyDown, err:
             try:
                 err.__str__()
