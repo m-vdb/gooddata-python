@@ -55,7 +55,9 @@ class MigrationFailed(GoodDataClientError):
 
 
 class GoodDataTotallyDown(GoodDataClientError):
-    pass
+    def __init__(self, err, **kwargs):
+        self.msg = str(err.__class__.__name__) + ': ' + str(err)
+        self.error_info = kwargs
 
 
 class ReportExecutionFailed(GoodDataClientError):
