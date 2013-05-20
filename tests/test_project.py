@@ -64,7 +64,7 @@ class TestProject(unittest.TestCase):
             Project(self.connection).create(test_project_name, gd_token)
         except GoodDataTotallyDown, err:
             try:
-                err.__str__()
+                str(err)
             except TypeError, e:
                 self.fail('GoodDataTotallyDown.__str__(): unexpected exception: %s' % e)
 
