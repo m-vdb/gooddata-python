@@ -16,10 +16,6 @@ from gooddataclient.schema.maql import (
     SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
 )
 from gooddataclient.schema.state import State
-from gooddataclient.schema.utils import (
-    retrieve_column_tuples, retrieve_dlc_info, get_references, attr_is_cp,
-    get_user_cp_info
-)
 
 
 logger = logging.getLogger("gooddataclient")
@@ -241,10 +237,10 @@ class Dataset(State):
         A function to retrieve the remote SLI manifest, useful
         to make comparisons with the local dataset.
         """
+        # FIXME: ANA-513, to raise error if needed
         return self.connection.get(
             uri=self.SLI_URI % (self.project.id, self.identifier)
         ).json()['dataSetSLIManifest']['parts']
-
 
     def get_sli_manifest(self, full_upload=False):
         '''Create JSON manifest from columns in schema.
