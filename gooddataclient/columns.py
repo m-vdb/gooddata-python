@@ -140,24 +140,24 @@ class Column(object):
         maql = ''
 
         try:
-            self.title = new_attributes['title']
-            if self.TEMPLATE_TITLE:
-                maql += self.TEMPLATE_TITLE
+            self.dataType = new_attributes['dataType']
+            if self.TEMPLATE_DATATYPE and self.dataType:
+                maql += self.TEMPLATE_DATATYPE
         except KeyError:
             pass
 
         try:
-            self.dataType = new_attributes['dataType']
-            if self.TEMPLATE_DATATYPE:
-                maql += self.TEMPLATE_DATATYPE
+            self.title = new_attributes['title']
+            if self.TEMPLATE_TITLE and self.title:
+                maql += self.TEMPLATE_TITLE
         except KeyError:
             pass
 
         # in the case of Label / HyperLink, we can
         # arrive at this step without any change in title or
         # dataType and still want to modify the attribute
-        if not maql and isinstance(self, Label):
-            maql = self.TEMPLATE_TITLE
+        if isinstance(self, Label):
+            maql += self.TEMPLATE_TITLE
 
         return maql % self
 
