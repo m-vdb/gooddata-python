@@ -8,7 +8,7 @@ from requests.exceptions import (
 from gooddataclient.exceptions import (
     ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
     get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed,
-    GoodDataTotallyDown
+    GoodDataTotallyDown, InvalidAPIQuery
 )
 
 logger = logging.getLogger("gooddataclient")
@@ -31,6 +31,7 @@ class Project(object):
     MAQL_VALID_URI = '/gdc/md/%s/maqlvalidator'
     PULL_URI = '/gdc/md/%s/etl/pull'
     DML_EXEC_URI = '/gdc/md/%s/dml/manage'
+    USING_URI = '/gdc/md/%s/using/%s'
 
     def __init__(self, connection):
         self.connection = connection
@@ -223,3 +224,24 @@ class Project(object):
                 )
 
             time.sleep(0.5)
+
+    def get_using(self, object_id):
+        """
+        A function to retrieve all the objects that use
+        a given object (referenced by its object_id).
+        """
+        using_uri = self.USING_URI % (self.id, object_id)
+        try:
+            response = self.connection.get(uri=using_uri)
+            response.raise_for_status()
+        except HTTPError, err:
+            status_code = err.response.status_code
+            err_json = err.response.json()['error']
+            raise InvalidAPIQuery(
+                get_api_msg(err_json), gd_error=err_json,
+                status_code=status_code, dir_name=dir_name
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
+
+        return response.json()['using']['nodes']

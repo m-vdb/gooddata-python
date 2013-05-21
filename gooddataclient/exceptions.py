@@ -60,6 +60,10 @@ class GoodDataTotallyDown(GoodDataClientError):
         self.error_info = kwargs
 
 
+class InvalidAPIQuery(GoodDataClientError):
+    pass
+
+
 class ReportExecutionFailed(GoodDataClientError):
     pass
 

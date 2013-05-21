@@ -4,6 +4,7 @@ import os
 
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
+from gooddataclient.columns import Reference
 from gooddataclient.dataset import DateDimension, Dataset
 from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
@@ -82,35 +83,6 @@ class TestDataset(unittest.TestCase):
         dataset = DummyDataset(self.project)
         self.assertRaises(DataSetNotFoundError, dataset.get_metadata, 'dummy_dataset')
         self.assertRaises(NotImplementedError, dataset.data)
-
-    def test_has_properties(self):
-        department = examples.examples[0][1](self.project)
-        department.create()
-        worker = examples.examples[1][1](self.project)
-        worker.create()
-        salary = examples.examples[2][1](self.project)
-        salary.create()
-
-        # attributes
-        self.assertTrue(department.has_attribute('department'))
-        self.assertTrue(department.has_attribute('city'))
-        self.assertFalse(department.has_attribute('town'))
-        # facts
-        self.assertTrue(salary.has_fact('payment'))
-        self.assertFalse(worker.has_fact('name'))
-        self.assertFalse(worker.has_fact('age'))
-        # labels
-        self.assertTrue(department.has_label('name'))
-        self.assertFalse(department.has_label('city'))
-        self.assertFalse(department.has_label('building'))
-        # references
-        self.assertTrue(worker.has_reference('department'))
-        self.assertFalse(worker.has_reference('jungle'))
-        self.assertTrue(salary.has_reference('worker'))
-        # dates
-        self.assertTrue(salary.has_date('payday'))
-        self.assertFalse(salary.has_date('expires_at'))
-        self.assertFalse(department.has_date('birthday'))
 
 
 if __name__ == '__main__':

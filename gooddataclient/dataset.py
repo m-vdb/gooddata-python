@@ -15,18 +15,18 @@ from gooddataclient.archiver import CSV_DATA_FILENAME
 from gooddataclient.schema.maql import (
     SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
 )
+from gooddataclient.schema.state import State
 
 
 logger = logging.getLogger("gooddataclient")
 
 
-class Dataset(object):
+class Dataset(State):
 
     DATASETS_URI = '/gdc/md/%s/data/sets'
 
     def __init__(self, project=None):
-        self.project = project
-        self.connection = project.connection if project else None
+        super(Dataset, self).__init__(project)
 
         # column initializations
         self._columns = []
@@ -61,6 +61,10 @@ class Dataset(object):
         return self.Meta.schema_name or self.__class__.__name__
 
     @property
+    def identifier(self):
+        return to_identifier(self.schema_name)
+
+    @property
     def project_name(self):
         return self.Meta.project_name
 
@@ -74,50 +78,6 @@ class Dataset(object):
                 if name == col_name:
                     members_ordered.append((name, column))
         return members_ordered
-
-    def get_datasets_metadata(self):
-        return self.connection.get(uri=self.DATASETS_URI % self.project.id)
-
-    def get_metadata(self, name):
-        try:
-            datasets = self.get_datasets_metadata().json()['dataSetsInfo']['sets']
-        except KeyError:
-            datasets = []
-
-        identifier = 'dataset.%s' % to_identifier(name)
-        for dataset in datasets:
-            if dataset['meta']['identifier'] == identifier:
-                return dataset
-        raise DataSetNotFoundError(
-            'DataSet %(dataset)s not found', sets=datasets,
-            project_name=name, dataset=name
-        )
-
-    def get_column_uris(self):
-        """
-        A function to query GD API and retieve
-        the list of attributes and facts of the dataset.
-        """
-        dataset_json = self.get_metadata(self.schema_name)
-        response = self.connection.get(uri=dataset_json['meta']['uri'])
-        content_json = response.json()['dataSet']['content']
-
-        return content_json
-
-    def get_column_detail(self, uri, dlc=False):
-        """
-        A function to retrieve the details of a column,
-        given its uri.
-        """
-        column_json = self.connection.get(uri=uri).json()
-
-        if dlc:
-            return column_json['dataLoadingColumn']
-
-        try:
-            return column_json['attribute']
-        except KeyError:
-            return column_json['fact']
 
     def has_column(self, col_name, attribute=False, fact=False, date=False, reference=False, title=None):
         """
@@ -159,7 +119,7 @@ class Dataset(object):
         }
 
         for col_uri in col_uris:
-            col_json = self.get_column_detail(col_uri, reference)
+            col_json = self.get_column_detail(col_uri)
             if col_json['meta']['identifier'] == col_identifier:
                 if (not title or (title and col_json['meta']['title'] == title)):
                     return True
@@ -271,6 +231,16 @@ class Dataset(object):
                     if (column.folder, column.folder_title) not in fact_folders:
                         fact_folders.append((column.folder, column.folder_title))
         return attribute_folders, fact_folders
+
+    def get_remote_sli_manifest(self):
+        """
+        A function to retrieve the remote SLI manifest, useful
+        to make comparisons with the local dataset.
+        """
+        # FIXME: ANA-513, to raise error if needed
+        return self.connection.get(
+            uri=self.SLI_URI % (self.project.id, self.identifier)
+        ).json()['dataSetSLIManifest']['parts']
 
     def get_sli_manifest(self, full_upload=False):
         '''Create JSON manifest from columns in schema.
