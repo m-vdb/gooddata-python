@@ -98,10 +98,7 @@ class AlterColumn(Action):
         
     def _alteration_state(self):
         # if same column classes
-        same_columns = (
-            isinstance(self.column, self.new_column.__class__) &
-            isinstance(self.new_column, self.column.__class__)
-        )
+        same_columns = type(self.column) is type(self.new_column)
 
         # if Label -> HyperLink or the other way around
         hyperlink = False

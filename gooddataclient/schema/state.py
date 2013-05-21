@@ -187,7 +187,7 @@ class State(object):
         DiffState object.
         """
         remote_columns = self.get_remote_columns()
-        return DiffState(self._columns, remote_columns).get_diff_state()
+        return DiffState(remote_columns, dict(self._columns)).get_diff_state()
 
     def has_column(self, col_name, attribute=False, fact=False, date=False, reference=False, title=None):
         """
@@ -289,7 +289,7 @@ class DiffState(object):
         self.new_keys = set(new_state)
         self.intersect = self.new_keys.intersection(self.old_keys)
 
-    def get_diff_state(self)
+    def get_diff_state(self):
         """
         A method to get the differences between two states of a dataset.
 
@@ -310,7 +310,7 @@ class DiffState(object):
 
     def get_deleted_columns(self):
         deleted_keys = self.old_keys - self.intersect
-        return dict(((key, self.new_state[key]) for key in removed_keys))
+        return dict(((key, self.old_state[key]) for key in deleted_keys))
 
     def get_altered_columns(self):
         altered_columns = {}
