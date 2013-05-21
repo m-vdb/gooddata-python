@@ -19,6 +19,7 @@ class TestDataset(unittest.TestCase):
 
     def setUp(self):
         self.connection = Connection(username, password)
+        delete_projects_by_name(self.connection, test_project_name)
         self.project = Project(self.connection).create(test_project_name, gd_token)
 
     def tearDown(self):
