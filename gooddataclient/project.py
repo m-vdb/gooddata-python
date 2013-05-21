@@ -68,8 +68,11 @@ class Project(object):
             request_data['project']['meta']['projectTemplate'] = template_uri
 
         err_msg = 'Could not create project (%(name)s), status code: %(status_code)s'
-        response = self.connection.post(self.PROJECTS_URI, request_data,
-                                        raise_cls=ProjectCreationError, err_msg=err_msg)
+        response = self.connection.post(
+            self.PROJECTS_URI, request_data,
+            raise_cls=ProjectCreationError, err_msg=err_msg,
+            name=name
+        )
         id = response.json()['uri'].split('/')[-1]
         logger.debug("Created project name=%s with id=%s" % (name, id))
         return self.load(id=id)
@@ -102,8 +105,10 @@ class Project(object):
         data = {'expression': maql}
 
         err_msg = 'Could not access to remote validator: %(status_code)s'
-        response = self.connection.post(uri=self.MAQL_VALID_URI % self.id, data=data,
-                                        raise_cls=MaqlValidationFailed, err_msg=err_msg)
+        response = self.connection.post(
+            uri=self.MAQL_VALID_URI % self.id, data=data,
+            raise_cls=MaqlValidationFailed, err_msg=err_msg
+        )
         # verify response content
         content = response.json()
         if 'maqlOK' not in content:
@@ -114,8 +119,10 @@ class Project(object):
         self.validate_maql(maql)
 
         data = {'manage': {'maql': maql}}
-        response = self.connection.post(uri=self.MAQL_EXEC_URI % self.id, data=data,
-                                        raise_cls=MaqlExecutionFailed)
+        response = self.connection.post(
+            uri=self.MAQL_EXEC_URI % self.id, data=data,
+            raise_cls=MaqlExecutionFailed
+        )
         # It seems the API can retrieve several links
         task_uris = [entry['link'] for entry in response.json()['entries']]
 
@@ -132,23 +139,29 @@ class Project(object):
         """
         data = {'manage': {'maql': maql}}
 
-        response = self.connection.post(uri=self.DML_EXEC_URI % self.id, data=data,
-                                        raise_cls=DMLExecutionFailed)
+        response = self.connection.post(
+            uri=self.DML_EXEC_URI % self.id, data=data,
+            raise_cls=DMLExecutionFailed
+        )
 
         uri = response.json()['uri']
         self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         try:
-            response = self.connection.post(self.PULL_URI % self.id,
-                                            {'pullIntegration': dir_name})
+            response = self.connection.post(
+                self.PULL_URI % self.id,
+                {'pullIntegration': dir_name}
+            )
             response.raise_for_status()
         except HTTPError, err:
             status_code = err.response.status_code
             if status_code == 401:
                 self.connection.relogin()
-                response = self.connection.post(self.PULL_URI % self.id,
-                                                {'pullIntegration': dir_name})
+                response = self.connection.post(
+                    self.PULL_URI % self.id,
+                    {'pullIntegration': dir_name}
+                )
             else:
                 err_json = err.response.json()['error']
                 raise UploadFailed(

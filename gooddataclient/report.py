@@ -1,10 +1,7 @@
 import time
 import logging
 
-from gooddataclient.exceptions import (
-    ReportExecutionFailed, ReportExportFailed,
-    ReportRetrievalFailed
-)
+from gooddataclient.exceptions import ReportExecutionFailed, ReportExportFailed, ReportRetrievalFailed
 
 
 logger = logging.getLogger("gooddataclient")
@@ -43,8 +40,10 @@ class Report(object):
                 "report": report_definition
             }
         }
-        response = self.connection.post(uri=self.REPORT_EXEC_URI, data=request_data,
-                                        raise_cls=ReportExecutionFailed, report_id=self.id)
+        response = self.connection.post(
+            uri=self.REPORT_EXEC_URI, data=request_data,
+            raise_cls=ReportExecutionFailed, report_id=self.id
+        )
         self.exec_result = response.json()
 
     def export_report(self):
@@ -61,8 +60,10 @@ class Report(object):
                 "result": self.exec_result
             }
         }
-        response = self.connection.post(uri=self.REPORT_EXPORT_URI, data=request_data,
-                                        raise_cls=ReportExportFailed, report_id=self.id)
+        response = self.connection.post(
+            uri=self.REPORT_EXPORT_URI, data=request_data,
+            raise_cls=ReportExportFailed, report_id=self.id
+        )
 
         self.export_download_uri = response.json()['uri']
 
@@ -76,9 +77,11 @@ class Report(object):
 
         if not self.export_download_uri:
             self.export_report()
-        response = self.connection.get(uri=self.export_download_uri,
-                                       raise_cls=ReportRetrievalFailed,
-                                       report_id=self.id)
+        response = self.connection.get(
+            uri=self.export_download_uri,
+            raise_cls=ReportRetrievalFailed,
+            report_id=self.id
+        )
         self.report_content = response.text
 
         if not self.is_ready:

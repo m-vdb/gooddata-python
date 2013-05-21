@@ -3,8 +3,6 @@ import logging
 import inspect
 import re
 
-from requests.exceptions import HTTPError
-
 from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
 from gooddataclient import text
 from gooddataclient.columns import (
@@ -416,9 +414,11 @@ class DateDimension(object):
         using a name.
         """
         err_msg = 'Could not check if date exists: %(status_code)s'
-        response = self.connection.get(self.DATASETS_URI % self.project.id,
-                                       raise_cls=MaqlValidationFailed,
-                                       err_msg=err_msg)
+        response = self.connection.get(
+            self.DATASETS_URI % self.project.id,
+            raise_cls=MaqlValidationFailed,
+            err_msg=err_msg
+        )
         try:
             sets = response.json()['dataSetsInfo']['sets']
         except KeyError:

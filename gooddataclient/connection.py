@@ -8,7 +8,7 @@ from requests.exceptions import (
 )
 
 from gooddataclient.exceptions import (
-    AuthenticationError, GoodDataTotallyDown, get_api_msg
+    AuthenticationError, GoodDataTotallyDown, GoodDataClientError, get_api_msg
 )
 from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME
 
@@ -50,28 +50,18 @@ class Connection(object):
     def relogin(self):
         self.login(self.username, self.password)
 
-    def get(self, uri, *args, **kwargs):
+    def get(self, uri, raise_cls=GoodDataClientError, err_msg=None, **kwargs):
         logger.debug('GET: %s' % uri)
-        try:
-            response = requests.get(self.HOST + uri,
-                                cookies=self.cookies,
-                                headers=JSON_HEADERS,
-                                auth=(self.username, self.password))
-            response.raise_for_status()
-        except HTTPError, err:
-            try:
-                err_message = get_api_msg(err.response.json()['error'])
-            except ValueError:
-                err_message = err.response
-            raise kwargs['raise_cls'](
-                err_message, status_code=err.response.status_code,
-                **kwargs
-            )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
-        return response
+        get_data = {
+            'url': self.HOST + uri,
+            'cookies': self.cookies,
+            'headers': JSON_HEADERS,
+            'auth': (self.username, self.password)
+        }
+        return self.call('get', get_data, raise_cls, err_msg, **kwargs)
 
-    def post(self, uri, data, headers=JSON_HEADERS, login=False, *args, **kwargs):
+    def post(self, uri, data, headers=JSON_HEADERS, login=False,
+             raise_cls=GoodDataClientError, err_msg=None, **kwargs):
         logger.debug('POST: %s' % uri)
         post_data = {
             'url': self.HOST + uri,
@@ -82,17 +72,23 @@ class Connection(object):
         if not login:
             post_data['cookies'] = self.cookies
 
+        return self.call('post', post_data, raise_cls, err_msg, **kwargs)
+
+
+    def call(self, call_method, call_arguments, raise_cls, err_msg, **err_arguments):
         try:
-            response = requests.post(**post_data)
+            get_or_post = getattr(requests, call_method)
+            response = get_or_post(**call_arguments)
             response.raise_for_status()
         except HTTPError, err:
-            try:
-                err_message = get_api_msg(err.response.json()['error'])
-            except ValueError:
-                err_message = err.response
-            raise kwargs['raise_cls'](
-                err_message, status_code=err.response.status_code,
-                **kwargs
+            if not err_msg:
+                try:
+                    err_msg = get_api_msg(err.response.json()['error'])
+                except (ValueError, KeyError):
+                    err_msg = err.response
+            raise raise_cls(
+                err_msg, status_code=err.response.status_code,
+                **err_arguments
             )
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
