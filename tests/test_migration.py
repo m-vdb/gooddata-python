@@ -77,7 +77,6 @@ class TestMigration(unittest.TestCase):
         self.assertTrue(self.dataset.has_attribute('city'))
 
     def test_migration_one_dataset(self):
-        import pdb; pdb.set_trace()
         boss = Attribute(title='Boss', dataType='VARCHAR(50)', folder='Department')
         number_of_windows = Fact(title='Nb of Windows', dataType='INT')
         add1 = AddColumn(self.dataset.schema_name, 'boss', boss)
