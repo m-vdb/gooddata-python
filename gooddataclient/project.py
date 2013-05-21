@@ -81,16 +81,12 @@ class Project(object):
         """Delete a GoodData project"""
         try:
             uri = '/'.join((self.PROJECTS_URI, self.id))
-            self.connection.delete(uri=uri)
-        except HTTPError, err:
             err_msg = 'Project does not seem to be opened: %(project_id)s'
-            raise ProjectNotOpenedError(
-                err_msg, project_id=self.id, uri=uri,
-                status_code=err.response.status_code,
-                response=err.response.content
+            self.connection.delete(
+                uri=uri,
+                raise_cls=ProjectNotOpenedError, err_msg=err_msg,
+                project_id=self.id
             )
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
         except TypeError:
             err_msg = 'Project does not seem to be opened: %(project_id)s'
             raise ProjectNotOpenedError(err_msg, project_id=self.id, uri=uri)

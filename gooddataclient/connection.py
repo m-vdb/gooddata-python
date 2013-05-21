@@ -74,6 +74,14 @@ class Connection(object):
 
         return self.call('post', post_data, raise_cls, err_msg, **kwargs)
 
+    def delete(self, uri,
+               raise_cls=GoodDataClientError, err_msg=None, **kwargs):
+        logger.debug('DELETE: %s' % uri)
+        delete_data = {
+            'url': self.HOST + uri,
+            'auth': (self.username, self.password)
+        }
+        return self.call('delete', delete_data, raise_cls, err_msg, **kwargs)
 
     def call(self, call_method, call_arguments, raise_cls, err_msg, **err_arguments):
         try:
@@ -93,12 +101,6 @@ class Connection(object):
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
         return response
-
-    def delete(self, uri):
-        logger.debug('DELETE: %s' % uri)
-        r = requests.delete(url=self.HOST + uri, auth=(self.username, self.password))
-        r.raise_for_status()
-        return r
 
     def get_metadata(self):
         return self.get(self.MD_URI).json()
