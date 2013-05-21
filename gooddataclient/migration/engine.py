@@ -1,5 +1,6 @@
 from gooddataclient.columns import Date
-from gooddataclient.migration.chain import AddColumn, AddDate, DeleteColumn, AlterColumn
+from gooddataclient.migration.actions import AddColumn, AddDate, DeleteColumn, AlterColumn
+from gooddataclient.migration.chain import MigrationChain
 
 
 class MigrationEngine(object):
@@ -35,5 +36,19 @@ class MigrationEngine(object):
         """
         chain = []
 
-        for name, column in dataset_diff['added']:
-            pass
+        for name, column in dataset_diff['added'].iteritems():
+            Action = AddDate if isinstance(column, Date) else AddColumn
+            chain.append(Action(self.dataset.identifier, name, column))
+
+        for name, columns in dataset_diff['altered'].iteritems():
+            chain.append(
+                AlterColumn(
+                    schema_name=self.dataset.identifier, col_name=name,
+                    column=columns['old'], new_column=columns['new']
+                )
+            )
+
+        for name, column in dataset_diff['deleted'].iteritems():
+            chain.append(DeleteColumn(self.dataset.identifier, name, column))
+
+        return MigrationChain(project=self.project, chain=chain)
