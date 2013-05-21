@@ -3,9 +3,13 @@ import logging
 
 import simplejson as json
 import requests
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    HTTPError, ConnectionError
+)
 
-from gooddataclient.exceptions import AuthenticationError
+from gooddataclient.exceptions import (
+    AuthenticationError, GoodDataTotallyDown
+)
 from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME, DLI_MANIFEST_FILENAME
 
 logger = logging.getLogger("gooddataclient")
@@ -46,7 +50,9 @@ class Connection(object):
             r2 = self.get(uri=self.TOKEN_URI)
             r2.raise_for_status()
         except HTTPError, err:
-            raise AuthenticationError(str(err), err.response.content)
+            raise AuthenticationError(str(err), content=err.response.content)
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
 
     def relogin(self):
         self.login(self.username, self.password)
@@ -91,17 +97,32 @@ class Webdav(Connection):
         self.username = username
         self.password = password
 
-    def upload(self, data, sli_manifest):
+    def upload(
+        self, data, sli_manifest, dates=[], datetimes=[],
+        keep_csv=False, csv_file=None, no_upload=False
+    ):
         '''Create zip file with data in csv format and manifest file, then create
         directory in webdav and upload the zip file there.
 
         @param data: csv data to upload
         @param sli_manifest: dictionary with the columns definitions
+        @param dates: list of date fields
+        @param datetimes: lits of datetime fields
+        @param keep_csv: keep csv file on filesystem
+        @param csv_file: abspath where to keep csv file
+        @param no_upload: do the upload or not
 
         return the name of the temporary file, hence the name of the directory
         created in webdav uploads folder
         '''
-        archive = create_archive(data, sli_manifest)
+        archive = create_archive(
+            data, sli_manifest, dates,
+            datetimes, keep_csv, csv_file
+        )
+        if no_upload:
+            os.remove(archive)
+            return csv_file
+
         dir_name = os.path.basename(archive)
         # create the folder on WebDav
         self.mkcol(uri=self.UPLOADS_URI % dir_name)

@@ -1,12 +1,15 @@
 import time
 import logging
 
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    HTTPError, ConnectionError
+)
 
-from gooddataclient.exceptions import ProjectNotOpenedError, UploadFailed,\
-                                      ProjectNotFoundError, MaqlExecutionFailed, \
-                                      get_api_msg, MaqlValidationFailed, \
-                                      ProjectCreationError
+from gooddataclient.exceptions import (
+    ProjectNotOpenedError, UploadFailed, ProjectNotFoundError, MaqlExecutionFailed,
+    get_api_msg, MaqlValidationFailed, ProjectCreationError, DMLExecutionFailed,
+    GoodDataTotallyDown, InvalidAPIQuery
+)
 
 logger = logging.getLogger("gooddataclient")
 
@@ -27,6 +30,8 @@ class Project(object):
     MAQL_EXEC_URI = '/gdc/md/%s/ldm/manage2'
     MAQL_VALID_URI = '/gdc/md/%s/maqlvalidator'
     PULL_URI = '/gdc/md/%s/etl/pull'
+    DML_EXEC_URI = '/gdc/md/%s/dml/manage'
+    USING_URI = '/gdc/md/%s/using/%s'
 
     def __init__(self, connection):
         self.connection = connection
@@ -42,11 +47,9 @@ class Project(object):
             if link['title'] == name:
                 logger.debug('Retrieved Project identifier for %s: %s' % (name, link['identifier']))
                 return link['identifier']
-        err_json = {
-            'links': data['about']['links'],
-            'project_name': name,
-        }
-        raise ProjectNotFoundError('Failed to retrieve Project identifier for %s' % (name), err_json)
+
+        err_msg = 'Failed to retrieve Project identifier for %(project_name)s'
+        raise ProjectNotFoundError(err_msg, links=data['about']['links'], project_name=name)
 
     def create(self, name, gd_token, desc=None, template_uri=None):
         """Create a new GoodData project"""
@@ -68,13 +71,13 @@ class Project(object):
             response = self.connection.post(self.PROJECTS_URI, request_data)
             response.raise_for_status()
         except HTTPError, err:
-            err_json = {
-                'name': name,
-                'status_code': err.response.status_code,
-                'response': err.response.content
-            }
-            err_msg = 'Could not create project (%(name)s), status code: %(status_code)s' % err_json
-            raise ProjectCreationError(err_msg, err_json)
+            err_msg = 'Could not create project (%(name)s), status code: %(status_code)s'
+            raise ProjectCreationError(
+                err_msg, name=name, response=err.response.content,
+                status_code=err.response.status_code
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         else:
             id = response.json()['uri'].split('/')[-1]
             logger.debug("Created project name=%s with id=%s" % (name, id))
@@ -86,19 +89,17 @@ class Project(object):
             uri = '/'.join((self.PROJECTS_URI, self.id))
             self.connection.delete(uri=uri)
         except HTTPError, err:
-            err_json = {
-                'project_id': self.id,
-                'uri': uri,
-                'status_code': err.response.status_code,
-                'response': err.response.content
-            }
-            raise ProjectNotOpenedError('Project does not seem to be opened: %s' % self.id, err_json)
+            err_msg = 'Project does not seem to be opened: %(project_id)s'
+            raise ProjectNotOpenedError(
+                err_msg, project_id=self.id, uri=uri,
+                status_code=err.response.status_code,
+                response=err.response.content
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         except TypeError:
-            err_json = {
-                'project_id': self.id,
-                'uri': uri
-            }
-            raise ProjectNotOpenedError('Project does not seem to be opened: %s' % self.id, err_json)
+            err_msg = 'Project does not seem to be opened: %(project_id)s'
+            raise ProjectNotOpenedError(err_msg, project_id=self.id, uri=uri)
 
     def validate_maql(self, maql):
         """
@@ -113,18 +114,19 @@ class Project(object):
             response = self.connection.post(uri=self.MAQL_VALID_URI % self.id, data=data)
             response.raise_for_status()
         except HTTPError, err:
-            err_msg = 'Could not access to remote validator: %s' % err.response.status_code
-            err_json = {
-                'status_code': err.response.status_code,
-                'response': err.response.content,
-            }
-            raise MaqlValidationFailed(err_msg, err_json)
+            err_msg = 'Could not access to remote validator: %(status_code)s'
+            raise MaqlValidationFailed(
+                err_msg, response=err.response.content,
+                status_code=err.response.status_code
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         else:
             # verify response content
             content = response.json()
             if 'maqlOK' not in content:
                 err_msg = 'MAQL queries did not validate'
-                raise MaqlValidationFailed(err_msg, content)
+                raise MaqlValidationFailed(err_msg, reponse=content)
 
     def execute_maql(self, maql, wait_for_finish=True):
         self.validate_maql(maql)
@@ -135,18 +137,42 @@ class Project(object):
             response.raise_for_status()
         except HTTPError, err:
             err_json = err.response.json()['error']
-            err_json.update({
-                'status_code': err.response.status_code,
-                'maql': maql,
-            })
-
-            raise MaqlExecutionFailed(get_api_msg(err_json),err_json)
+            raise MaqlExecutionFailed(
+                get_api_msg(err_json), gd_error=err_json,
+                status_code=err.response.status_code, maql=maql
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
         # It seems the API can retrieve several links
         task_uris = [entry['link'] for entry in response.json()['entries']]
 
         if wait_for_finish:
             for task_uri in task_uris:
                 self.poll(task_uri, 'wTaskStatus.status', MaqlExecutionFailed, {'maql': maql})
+
+    def execute_dml(self, maql):
+        """
+        Execute MAQL statements on the DML entrypoint of the API,
+        for example deleting rows for a dataset, etc...
+
+        :param maql:    the MAQL statements
+        """
+        data = {'manage': {'maql': maql}}
+
+        try:
+            response = self.connection.post(uri=self.DML_EXEC_URI % self.id, data=data)
+            response.raise_for_status()
+        except HTTPError, err:
+            err_json = err.response.json()['error']
+            raise DMLExecutionFailed(
+                get_api_msg(err_json), gd_error=err_json,
+                status_code=err.response.status_code, maql=maql
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
+
+        uri = response.json()['uri']
+        self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         try:
@@ -161,9 +187,13 @@ class Project(object):
                                                 {'pullIntegration': dir_name})
             else:
                 err_json = err.response.json()['error']
-                err_json['status_code'] = status_code
-                err_json['dir_name'] = dir_name
-                raise UploadFailed(get_api_msg(err_json), err_json)
+                raise UploadFailed(
+                    get_api_msg(err_json), gd_error=err_json,
+                    status_code=status_code, dir_name=dir_name
+                )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
+
         task_uri = response.json()['pullTask']['uri']
 
         if wait_for_finish:
@@ -187,9 +217,31 @@ class Project(object):
                 break
             if status in ('ERROR', 'WARNING'):
                 err_json = err_json or {}
-                err_json.update(response)
-                err_msg = 'An error occured while polling uri %s' % uri
-                import pdb; pdb.set_trace()
-                raise ErrorClass(err_msg, err_json)
+                err_msg = 'An error occured while polling uri %(uri)s'
+                raise ErrorClass(
+                    err_msg, response=response,
+                    custom_error=err_json, uri=uri
+                )
 
             time.sleep(0.5)
+
+    def get_using(self, object_id):
+        """
+        A function to retrieve all the objects that use
+        a given object (referenced by its object_id).
+        """
+        using_uri = self.USING_URI % (self.id, object_id)
+        try:
+            response = self.connection.get(uri=using_uri)
+            response.raise_for_status()
+        except HTTPError, err:
+            status_code = err.response.status_code
+            err_json = err.response.json()['error']
+            raise InvalidAPIQuery(
+                get_api_msg(err_json), gd_error=err_json,
+                status_code=status_code, dir_name=dir_name
+            )
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
+
+        return response.json()['using']['nodes']

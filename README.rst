@@ -35,7 +35,7 @@ Setting up the Dataset for Forex example::
 
 	class Forex(Dataset):
 	
-	    id = ConnectionPoint(title='Id', dataType='IDENTITY')
+	    id = ConnectionPoint(title='Id')
 	    time = Date(title='TIME', datetime=True, folder='Forex', schemaReference='Forex', format='dd-MM-yyyy HH:mm:ss')
 	    volume = Fact(title='VOLUME', dataType='DECIMAL(8,4)', folder='Forex')
 	    open = Fact(title='OPEN', dataType='DECIMAL(8,4)', folder='Forex')
@@ -107,7 +107,9 @@ so that no conflicts occur with existing configurations.
 Then, provided you added the gooddataclient to your PYTHONPATH, you can execute tests like this::
 
         $ make test # execute the whole test suite
-        $ make test_connection # execute a particular test
+        $ make test TESTS=test_migration
+        $ make test TESTS=test_migration.TestMigration
+        $ make test TESTS=test_migration.TestMigration.test_simple_add_column
 
 See the available tests in ``tests/`` directory.
 

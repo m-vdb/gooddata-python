@@ -1,11 +1,17 @@
+from datetime import datetime
+
 from gooddataclient.dataset import Dataset
 from gooddataclient.columns import ConnectionPoint, Date, Fact, Reference
 
+
+payment_date = datetime(2006,1,1)
+
+
 class Salary(Dataset):
 
-    salary = ConnectionPoint(title='Salary', folder='Salary')
-    worker = Reference(title='Worker', reference='worker', schemaReference='Worker', folder='Salary')
-    payment = Fact(title='Payment', folder='Salary')
+    salary = ConnectionPoint(title='Salary', folder='Salary', dataType='VARCHAR(128)')
+    worker = Reference(title='Worker', reference='worker', schemaReference='Worker', folder='Salary', dataType='VARCHAR(128)')
+    payment = Fact(title='Payment', folder='Salary', dataType='INT')
     payday = Date(title='Pay Day', format='yyyy-MM-dd', schemaReference='payment', folder='Salary')
 
     class Meta(Dataset.Meta):
@@ -13,25 +19,27 @@ class Salary(Dataset):
 
 
     def data(self):
-        return [{'salary': 's1', 'worker': 'e1', 'payday': '2006-01-01', 'payment': '10230', 'payday_dt': '38717'},
-                 {'salary': 's2', 'worker': 'e2', 'payday': '2006-01-01', 'payment': '4810', 'payday_dt': '38717'},
-                 {'salary': 's3', 'worker': 'e6', 'payday': '2006-01-01', 'payment': '6080', 'payday_dt': '38717'},
-                 {'salary': 's4', 'worker': 'e7', 'payday': '2006-01-01', 'payment': '5740', 'payday_dt': '38717'},
-                 {'salary': 's5', 'worker': 'e10', 'payday': '2006-01-01', 'payment': '6630', 'payday_dt': '38717'},
-                 {'salary': 's9', 'worker': 'e23', 'payday': '2006-01-01', 'payment': '4230', 'payday_dt': '38717'},
-                 {'salary': 's10', 'worker': 'e24', 'payday': '2006-01-01', 'payment': '4230', 'payday_dt': '38717'},
-                 {'salary': 's11', 'worker': 'e25', 'payday': '2006-01-01', 'payment': '3790', 'payday_dt': '38717'},
-                 {'salary': 's12', 'worker': 'e26', 'payday': '2006-01-01', 'payment': '3420', 'payday_dt': '38717'},
-                 {'salary': 's13', 'worker': 'e27', 'payday': '2006-01-01', 'payment': '4220', 'payday_dt': '38717'},
-                 {'salary': 's14', 'worker': 'e28', 'payday': '2006-01-01', 'payment': '3330', 'payday_dt': '38717'},
-                 {'salary': 's15', 'worker': 'e29', 'payday': '2006-01-01', 'payment': '3990', 'payday_dt': '38717'},
-                 {'salary': 's16', 'worker': 'e30', 'payday': '2006-01-01', 'payment': '3610', 'payday_dt': '38717'},
-                 {'salary': 's17', 'worker': 'e31', 'payday': '2006-01-01', 'payment': '4350', 'payday_dt': '38717'},
-                 {'salary': 's18', 'worker': 'e32', 'payday': '2006-01-01', 'payment': '3340', 'payday_dt': '38717'},
-                 {'salary': 's19', 'worker': 'e33', 'payday': '2006-01-01', 'payment': '3990', 'payday_dt': '38717'},
-                 {'salary': 's20', 'worker': 'e34', 'payday': '2006-01-01', 'payment': '3630', 'payday_dt': '38717'}
+        return [{'salary': 's1', 'worker': 'e1', 'payment': 10230, 'payday': payment_date},
+                 {'salary': 's2', 'worker': 'e2', 'payment': 4810, 'payday': payment_date},
+                 {'salary': 's3', 'worker': 'e6', 'payment': 6080, 'payday': payment_date},
+                 {'salary': 's4', 'worker': 'e7', 'payment': 5740, 'payday': payment_date},
+                 {'salary': 's5', 'worker': 'e10', 'payment': 6630, 'payday': payment_date},
+                 {'salary': 's9', 'worker': 'e23', 'payment': 4230, 'payday': payment_date},
+                 {'salary': 's10', 'worker': 'e24', 'payment': 4230, 'payday': payment_date},
+                 {'salary': 's11', 'worker': 'e25', 'payment': 3790, 'payday': payment_date},
+                 {'salary': 's12', 'worker': 'e26', 'payment': 3420, 'payday': payment_date},
+                 {'salary': 's13', 'worker': 'e27', 'payment': 4220, 'payday': payment_date},
+                 {'salary': 's14', 'worker': 'e28', 'payment': 3330, 'payday': payment_date},
+                 {'salary': 's15', 'worker': 'e29', 'payment': 3990, 'payday': payment_date},
+                 {'salary': 's16', 'worker': 'e30', 'payment': 3610, 'payday': payment_date},
+                 {'salary': 's17', 'worker': 'e31', 'payment': 4350, 'payday': payment_date},
+                 {'salary': 's18', 'worker': 'e32', 'payment': 3340, 'payday': payment_date},
+                 {'salary': 's19', 'worker': 'e33', 'payment': 3990, 'payday': payment_date},
+                 {'salary': 's20', 'worker': 'e34', 'payment': 3630, 'payday': payment_date}
                  ]
 
+dates = ['payday']
+datetimes = []
 
 maql = """
 # THIS IS MAQL SCRIPT THAT GENERATES PROJECT LOGICAL MODEL.

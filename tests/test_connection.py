@@ -8,7 +8,10 @@ from gooddataclient.exceptions import AuthenticationError
 from gooddataclient.archiver import write_tmp_file
 
 from tests.credentials import username, password
-from tests import examples, logger, get_parser
+from tests import examples, logger
+
+
+logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestConnection(unittest.TestCase):
@@ -40,7 +43,4 @@ class TestConnection(unittest.TestCase):
         connection.webdav.delete(dir_name)
 
 if __name__ == '__main__':
-    args = get_parser().parse_args()
-    logger.logger.setLevel(args.loglevel)
-    del sys.argv[1:]
     unittest.main()

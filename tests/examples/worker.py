@@ -1,25 +1,28 @@
+# -*- coding: utf-8 -*-
+
 from gooddataclient.dataset import Dataset
 from gooddataclient.columns import ConnectionPoint, Label, Reference
 
 class Worker(Dataset):
 
-    worker = ConnectionPoint(title='Worker', folder='Worker')
-    firstname = Label(title='First Name', reference='worker', folder='Worker')
-    lastname = Label(title='Last Name', reference='worker', folder='Worker')
-    department = Reference(title='Department', reference='department', schemaReference='Department', folder='Worker')
+    worker = ConnectionPoint(title='Worker', folder='Worker', dataType='VARCHAR(128)')
+    firstname = Label(title='First Name', reference='worker', folder='Worker', dataType='VARCHAR(128)')
+    lastname = Label(title='Last Name', reference='worker', folder='Worker', dataType='VARCHAR(128)')
+    department = Reference(title='Department', reference='department',
+                           schemaReference='Department', folder='Worker', dataType='VARCHAR(128)')
 
     class Meta(Dataset.Meta):
         column_order = ('worker', 'firstname', 'lastname', 'department')
 
 
     def data(self):
-        return [{'worker': 'e1', 'lastname': 'Nowmer', 'department': 'd1', 'firstname': 'Sheri'},
+        return [{'worker': 'e1', 'lastname': 'Nowmer', 'department': 'd1', 'firstname': u'José'},
              {'worker': 'e2', 'lastname': 'Whelply', 'department': 'd1', 'firstname': 'Derrick'},
              {'worker': 'e6', 'lastname': 'Damstra', 'department': 'd2', 'firstname': 'Roberta'},
              {'worker': 'e7', 'lastname': 'Kanagaki', 'department': 'd3', 'firstname': 'Rebecca'},
              {'worker': 'e8', 'lastname': 'Brunner', 'department': 'd11', 'firstname': 'Kim'},
              {'worker': 'e9', 'lastname': 'Blumberg', 'department': 'd11', 'firstname': 'Brenda'},
-             {'worker': 'e10', 'lastname': 'Stanz', 'department': 'd5', 'firstname': 'Darren'},
+             {'worker': 'e10', 'lastname': 'Stanz', 'department': 'd5', 'firstname': u'Niño'},
              {'worker': 'e11', 'lastname': 'Murraiin', 'department': 'd11', 'firstname': 'Jonathan'},
              {'worker': 'e12', 'lastname': 'Creek', 'department': 'd11', 'firstname': 'Jewel'},
              {'worker': 'e13', 'lastname': 'Medina', 'department': 'd11', 'firstname': 'Peggy'},
@@ -31,6 +34,7 @@ class Worker(Dataset):
              {'worker': 'e19', 'lastname': 'Collins', 'department': 'd11', 'firstname': 'Dianne'}
              ]
 
+dates = datetimes = []
 
 maql = """
 # THIS IS MAQL SCRIPT THAT GENERATES PROJECT LOGICAL MODEL.
@@ -107,13 +111,13 @@ schema_xml = '''
 '''
 
 data_csv = '''"worker","firstname","lastname","department"
-"e1","Sheri","Nowmer","d1"
+"e1","José","Nowmer","d1"
 "e2","Derrick","Whelply","d1"
 "e6","Roberta","Damstra","d2"
 "e7","Rebecca","Kanagaki","d3"
 "e8","Kim","Brunner","d11"
 "e9","Brenda","Blumberg","d11"
-"e10","Darren","Stanz","d5"
+"e10","Niño","Stanz","d5"
 "e11","Jonathan","Murraiin","d11"
 "e12","Jewel","Creek","d11"
 "e13","Peggy","Medina","d11"

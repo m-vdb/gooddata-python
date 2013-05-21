@@ -1,12 +1,13 @@
 
+
 class GoodDataClientError(Exception):
 
-    def __init__(self, msg, error_info=None):
+    def __init__(self, msg, **kwargs):
         self.msg = msg
-        self.error_info = error_info or {}
+        self.error_info = kwargs
 
     def __str__(self):
-        return repr(self.msg)
+        return repr(self.msg % self.error_info)
 
 
 class AuthenticationError(GoodDataClientError):
@@ -37,11 +38,41 @@ class MaqlExecutionFailed(GoodDataClientError):
     pass
 
 
+class DMLExecutionFailed(MaqlExecutionFailed):
+    pass
+
+
 class MaqlValidationFailed(GoodDataClientError):
     pass
 
 
 class GetSLIManifestFailed(GoodDataClientError):
+    pass
+
+
+class MigrationFailed(GoodDataClientError):
+    pass
+
+
+class GoodDataTotallyDown(GoodDataClientError):
+    def __init__(self, err, **kwargs):
+        self.msg = str(err.__class__.__name__) + ': ' + str(err)
+        self.error_info = kwargs
+
+
+class InvalidAPIQuery(GoodDataClientError):
+    pass
+
+
+class ReportExecutionFailed(GoodDataClientError):
+    pass
+
+
+class ReportExportFailed(GoodDataClientError):
+    pass
+
+
+class ReportRetrievalFailed(GoodDataClientError):
     pass
 
 
