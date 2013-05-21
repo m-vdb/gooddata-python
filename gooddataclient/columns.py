@@ -322,6 +322,11 @@ class Reference(Column):
     TEMPLATE_DROP = REFERENCE_DROP
     referenceKey = True
 
+    def __init__(self, *args, **kwargs):
+        super(Reference, self).__init__(*args, **kwargs)
+        # title is irrelevent for references
+        self.title = None
+
     def populates(self):
         return ["label.%(schemaReference)s.%(reference)s" % self]
 
