@@ -77,6 +77,7 @@ class TestMigration(unittest.TestCase):
         self.assertTrue(self.dataset.has_attribute('city'))
 
     def test_migration_one_dataset(self):
+        import pdb; pdb.set_trace()
         boss = Attribute(title='Boss', dataType='VARCHAR(50)', folder='Department')
         number_of_windows = Fact(title='Nb of Windows', dataType='INT')
         add1 = AddColumn(self.dataset.schema_name, 'boss', boss)
@@ -160,7 +161,7 @@ class TestMigration(unittest.TestCase):
         dataset.style = Label(title='Life style', reference='hobby', dataType='VARCHAR(30)')
         dataset.create()
 
-        del1 =DeleteColumn(dataset.schema_name, 'hobby', dataset.hobby)
+        del1 = DeleteColumn(dataset.schema_name, 'hobby', dataset.hobby)
 
         class ComplexMigration(MigrationChain):
             chain = [del1, ]
@@ -289,11 +290,12 @@ class TestMigration(unittest.TestCase):
         self.assertTrue(salary.has_date('payday', title='Payday 2 (Date)'))
         self.assertFalse(salary.has_date('payday', title='Pay Day'))
 
+
     def test_engine(self):
-        Department = examples.examples[0][1]
-        Worker = examples.examples[1][1]
+        Department = type("Department", (examples.examples[0][1], ), {})
+        Worker = type("Worker", (examples.examples[1][1], ), {})
         Worker(self.project).create()
-        Salary = examples.examples[2][1]
+        Salary = type("Salary", (examples.examples[2][1], ), {})
         Salary(self.project).create()
 
         Department.name = HyperLink(title='Name', reference='department', folder='Department', dataType='VARCHAR(128)')
