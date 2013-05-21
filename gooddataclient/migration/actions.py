@@ -86,7 +86,7 @@ class AlterColumn(Action):
             self.new_column.references_cp = self.column.references_cp
         # in other case, that means that we explicitely want
         # to change this attribute
-        else:
+        elif self.new_column.references_cp is None:
             self.new_column.references_cp = self.label_references_cp
 
         self.new_attrs = get_changed_attributes(self.new_column.__dict__, self.column.__dict__)
@@ -98,10 +98,7 @@ class AlterColumn(Action):
         
     def _alteration_state(self):
         # if same column classes
-        same_columns = (
-            isinstance(self.column, self.new_column.__class__) &
-            isinstance(self.new_column, self.column.__class__)
-        )
+        same_columns = type(self.column) is type(self.new_column)
 
         # if Label -> HyperLink or the other way around
         hyperlink = False

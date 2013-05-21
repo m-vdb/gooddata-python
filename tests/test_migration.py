@@ -7,6 +7,7 @@ from gooddataclient.connection import Connection
 from gooddataclient.migration.actions import (
     AddColumn, AddDate, DeleteColumn, DeleteRow, AlterColumn
 )
+from gooddataclient.migration.engine import MigrationEngine
 from gooddataclient.migration.chain import MigrationChain, DataMigrationChain
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.schema.maql import SYNCHRONIZE
@@ -32,6 +33,7 @@ class TestMigration(unittest.TestCase):
 
     def tearDown(self):
         self.project.delete()
+
 
     def test_simple_add_column(self):
         boss = Attribute(title='Boss', dataType='VARCHAR(50)', folder='Department')
@@ -158,7 +160,7 @@ class TestMigration(unittest.TestCase):
         dataset.style = Label(title='Life style', reference='hobby', dataType='VARCHAR(30)')
         dataset.create()
 
-        del1 =DeleteColumn(dataset.schema_name, 'hobby', dataset.hobby)
+        del1 = DeleteColumn(dataset.schema_name, 'hobby', dataset.hobby)
 
         class ComplexMigration(MigrationChain):
             chain = [del1, ]
@@ -286,6 +288,38 @@ class TestMigration(unittest.TestCase):
 
         self.assertTrue(salary.has_date('payday', title='Payday 2 (Date)'))
         self.assertFalse(salary.has_date('payday', title='Pay Day'))
+
+
+    def test_engine(self):
+        Department = type("Department", (examples.examples[0][1], ), {})
+        Worker = type("Worker", (examples.examples[1][1], ), {})
+        Worker(self.project).create()
+        Salary = type("Salary", (examples.examples[2][1], ), {})
+        Salary(self.project).create()
+
+        Department.name = HyperLink(title='Name', reference='department', folder='Department', dataType='VARCHAR(128)')
+        Department.city = None
+        Department.town = Attribute(title='Town', folder='Department', dataType='VARCHAR(20)')
+
+        engine = MigrationEngine(self.project, Department)
+        engine.migrate()
+
+        self.assertTrue(engine.dataset.is_synchronised())
+
+        old_dpt = Worker.department
+        Worker.department = None
+        engine = MigrationEngine(self.project, Worker)
+        engine.migrate()
+
+        self.assertTrue(engine.dataset.is_synchronised())
+
+        Salary.payment = Fact(title='Payment', folder='Salary', dataType='BIGINT')
+        Salary.payday = None
+        Salary.due_date = Date(title='Due Date', datetime=True, format='yyyy-MM-dd HH:mm:SS', schemaReference='payment')
+        engine = MigrationEngine(self.project, Salary)
+        engine.migrate()
+
+        self.assertTrue(engine.dataset.is_synchronised())
 
 
 if __name__ == '__main__':

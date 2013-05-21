@@ -13,13 +13,15 @@ class BaseChain(object):
 
     chain = []
 
-    def __init__(self, project):
+    def __init__(self, project, chain=None):
         """
         Initialize the migration chain with a project.
 
         :param project:  a Project instance
         """
         self.project = project
+        if chain:
+            self.chain = chain
 
     def execute(self):
         """
@@ -72,11 +74,13 @@ class MigrationChain(BaseChain):
     """
     data_chain = []
 
-    def __init__(self, post_push=True, *args, **kwargs):
+    def __init__(self, post_push=True, data_chain=None, *args, **kwargs):
         super(MigrationChain, self).__init__(*args, **kwargs)
         self.simplify_chain()
         self.dates = []
         self.do_post_push = post_push
+        if data_chain:
+            self.data_chain = data_chain
         self.data_migration = DataMigrationChain(
             chain=self.data_chain, project=self.project
         )

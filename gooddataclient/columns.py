@@ -29,7 +29,7 @@ class Column(object):
 
     def __init__(
         self, title, folder=None, reference=None, schemaReference=None,
-        dataType=None, datetime=False, format=None, references_cp=False
+        dataType=None, datetime=False, format=None, references_cp=None
     ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
@@ -42,6 +42,27 @@ class Column(object):
         # an attribute useful for labels,
         # to know if they reference a connection point
         self.references_cp = references_cp
+
+    def __eq__(self, other):
+        """
+        Useful to compare two columns with ==.
+        """
+        return (
+            type(self) is type(other) and
+            self.title == other.title and
+            self.reference == other.reference and
+            self.schemaReference == other.schemaReference and
+            self.dataType == other.dataType and
+            self.datetime == other.datetime and
+            self.format == other.format and
+            self.references_cp == other.references_cp
+        )
+
+    def __ne__(self, other):
+        """
+        Useful to compare two columns with !=.
+        """
+        return not self == other
 
     def __getitem__(self, item):
         """
@@ -300,6 +321,11 @@ class Reference(Column):
     TEMPLATE_CREATE = REFERENCE_CREATE
     TEMPLATE_DROP = REFERENCE_DROP
     referenceKey = True
+
+    def __init__(self, *args, **kwargs):
+        super(Reference, self).__init__(*args, **kwargs)
+        # title is irrelevent for references
+        self.title = None
 
     def populates(self):
         return ["label.%(schemaReference)s.%(reference)s" % self]

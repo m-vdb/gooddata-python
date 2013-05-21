@@ -3,7 +3,7 @@ import unittest
 
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
-from gooddataclient.columns import Reference
+from gooddataclient.columns import Reference, HyperLink, Attribute, Fact
 
 from tests.credentials import password, username, gd_token, test_project_name
 from tests import logger, examples
@@ -71,6 +71,45 @@ class TestState(unittest.TestCase):
                 self.assertEqual(col.reference, dataset_col.reference)
                 self.assertEqual(col.schemaReference, dataset_col.schemaReference)
                 self.assertEqual(col.datetime, dataset_col.datetime)
+
+    def test_remote_diff(self):
+        Department = examples.examples[0][1]
+        Department(self.project).create()
+        Worker = examples.examples[1][1]
+        Worker(self.project).create()
+        Salary = examples.examples[2][1]
+        Salary(self.project).create()
+
+        old_city = Department.city
+        old_name = Department.name
+        Department.name = HyperLink(title='Name', reference='department', folder='Department', dataType='VARCHAR(128)')
+        Department.city = None
+        Department.town = Attribute(title='Town', folder='Department', dataType='VARCHAR(20)')
+        remote_diff = Department(self.project).get_remote_diff()
+
+        self.assertIn('town', remote_diff['added'])
+        self.assertIn('name', remote_diff['altered'])
+        self.assertIn('city', remote_diff['deleted'])
+        self.assertEqual(remote_diff['added']['town'], Department.town)
+        self.assertEqual(remote_diff['altered']['name']['new'], Department.name)
+        self.assertEqual(remote_diff['altered']['name']['old'], old_name)
+        self.assertEqual(remote_diff['deleted']['city'], old_city)
+
+        old_dpt = Worker.department
+        Worker.department = None
+        remote_diff = Worker(self.project).get_remote_diff()
+
+        self.assertIn('department', remote_diff['deleted'])
+        self.assertFalse(remote_diff['added'])
+        self.assertFalse(remote_diff['altered'])
+        self.assertEqual(remote_diff['deleted']['department'], old_dpt)
+
+        Salary.payment = Fact(title='Payment', folder='Salary', dataType='BIGINT')
+        remote_diff = Salary(self.project).get_remote_diff()
+
+        self.assertIn('payment', remote_diff['altered'])
+        self.assertFalse(remote_diff['added'])
+        self.assertFalse(remote_diff['deleted'])
 
 
 if __name__ == '__main__':
