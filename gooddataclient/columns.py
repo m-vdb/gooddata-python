@@ -48,12 +48,13 @@ class Column(object):
         Useful to compare two columns with ==.
         """
         return (
-            self.title == other.title &&
-            self.reference == other.reference &&
-            self.schemaReference == other.schemaReference &&
-            self.dataType == other.dataType &&
-            self.datetime == other.datetime &&
-            self.format == other.format &&
+            type(self) is type(other) and
+            self.title == other.title and
+            self.reference == other.reference and
+            self.schemaReference == other.schemaReference and
+            self.dataType == other.dataType and
+            self.datetime == other.datetime and
+            self.format == other.format and
             self.references_cp == other.references_cp
         )
 
