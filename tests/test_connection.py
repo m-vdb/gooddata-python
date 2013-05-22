@@ -3,6 +3,8 @@ import os
 import unittest
 from zipfile import ZipFile
 
+from requests.exceptions import HTTPError
+
 from gooddataclient.connection import Connection
 from gooddataclient.exceptions import (
     AuthenticationError, GoodDataTotallyDown, ReportExportFailed
@@ -71,6 +73,8 @@ class TestConnection(unittest.TestCase):
         report = Report(self.project, test_report_id)
         report.exec_result = 'fake'
         self.assertRaises(ReportExportFailed, report.export_report)
+
+        self.assertRaises(HTTPError, self.connection.get, '/wronguri')
 
 
 if __name__ == '__main__':
