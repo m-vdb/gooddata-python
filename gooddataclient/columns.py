@@ -48,13 +48,12 @@ class Column(object):
         Useful to compare two columns with ==.
         """
         return (
-            type(self) is type(other) and
+            self.ldmType == other.ldmType and
             self.title == other.title and
             self.reference == other.reference and
             self.schemaReference == other.schemaReference and
             self.dataType == other.dataType and
             self.datetime == other.datetime and
-            self.format == other.format and
             self.references_cp == other.references_cp
         )
 
@@ -243,6 +242,8 @@ class Date(Fact):
     TEMPLATE_DATATYPE = None
 
     def __init__(self, **kwargs):
+        # this is mandatory for dates
+        kwargs['dataType'] = 'DATE'
         super(Date, self).__init__(**kwargs)
         if self.datetime:
             self.time = Time(**kwargs)
