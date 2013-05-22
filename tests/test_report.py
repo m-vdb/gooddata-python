@@ -5,6 +5,7 @@ import os
 from gooddataclient.connection import Connection
 from gooddataclient.project import Project
 from gooddataclient.report import Report
+from gooddataclient.exceptions import ReportExportFailed
 
 from tests.credentials import (
     password, username, test_report_id, report_project_id,
@@ -31,6 +32,9 @@ class TestReport(unittest.TestCase):
         report = Report(self.project, test_report_id)
         report.export_report()
         self.assertTrue(report.export_download_uri)
+
+        report.exec_result = 'fake'
+        self.assertRaises(ReportExportFailed, report.export_report)
 
     def test_get_report(self):
         report = Report(self.project, test_report_id)

@@ -8,9 +8,9 @@ from requests.exceptions import (
 )
 
 from gooddataclient.exceptions import (
-    AuthenticationError, GoodDataTotallyDown
+    AuthenticationError, GoodDataTotallyDown, GoodDataClientError, get_api_msg
 )
-from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME, DLI_MANIFEST_FILENAME
+from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME
 
 logger = logging.getLogger("gooddataclient")
 
@@ -35,54 +35,74 @@ class Connection(object):
         self.login(username, password)
 
     def login(self, username, password):
-        try:
-            data = {
-                'postUserLogin': {
-                    'login': username,
-                    'password': password,
-                    'remember': 1,
-                }
+        data = {
+            'postUserLogin': {
+                'login': username,
+                'password': password,
+                'remember': 1,
             }
-            r1 = self.post(uri=self.LOGIN_URI, data=data, login=True)
-            r1.raise_for_status()
-            self.cookies = self.webdav.cookies = r1.cookies
-
-            r2 = self.get(uri=self.TOKEN_URI)
-            r2.raise_for_status()
-        except HTTPError, err:
-            raise AuthenticationError(str(err), content=err.response.content)
-        except ConnectionError, err:
-            raise GoodDataTotallyDown(err.message)
+        }
+        r1 = self.post(uri=self.LOGIN_URI, data=data, login=True,
+                       raise_cls=AuthenticationError)
+        self.cookies = self.webdav.cookies = r1.cookies
+        self.get(uri=self.TOKEN_URI, raise_cls=AuthenticationError)
 
     def relogin(self):
         self.login(self.username, self.password)
 
-    def get(self, uri):
+    def get(self, uri, raise_cls=None, err_msg=None, **kwargs):
         logger.debug('GET: %s' % uri)
-        response = requests.get(self.HOST + uri,
-                                cookies=self.cookies,
-                                headers=JSON_HEADERS,
-                                auth=(self.username, self.password))
-        return response
+        get_data = {
+            'url': self.HOST + uri,
+            'cookies': self.cookies,
+            'headers': JSON_HEADERS,
+            'auth': (self.username, self.password)
+        }
+        return self.request('get', get_data, raise_cls, err_msg, **kwargs)
 
-    def post(self, uri, data, headers=JSON_HEADERS, login=False):
+    def post(
+        self, uri, data, headers=JSON_HEADERS, login=False,
+        raise_cls=None, err_msg=None, **kwargs
+    ):
         logger.debug('POST: %s' % uri)
-        kwargs = {
+        post_data = {
             'url': self.HOST + uri,
             'data': json.dumps(data),
             'headers': headers,
             'auth': (self.username, self.password)
         }
         if not login:
-            kwargs['cookies'] = self.cookies
+            post_data['cookies'] = self.cookies
 
-        return requests.post(**kwargs)
+        return self.request('post', post_data, raise_cls, err_msg, **kwargs)
 
-    def delete(self, uri):
+    def delete(self, uri, raise_cls=None, err_msg=None, **kwargs):
         logger.debug('DELETE: %s' % uri)
-        r = requests.delete(url=self.HOST + uri, auth=(self.username, self.password))
-        r.raise_for_status()
-        return r
+        delete_data = {
+            'url': self.HOST + uri,
+            'auth': (self.username, self.password)
+        }
+        return self.request('delete', delete_data, raise_cls, err_msg, **kwargs)
+
+    def request(self, call_method, call_arguments, raise_cls, err_msg, **err_arguments):
+        try:
+            response = requests.request(method=call_method, **call_arguments)
+            response.raise_for_status()
+        except HTTPError, err:
+            if raise_cls:
+                if not err_msg:
+                    try:
+                        err_msg = get_api_msg(err.response.json()['error'])
+                    except (ValueError, KeyError):
+                        err_msg = str(err.response) + "for %s %s" % (call_method, call_arguments['url'])
+                raise raise_cls(
+                    err_msg, status_code=err.response.status_code,
+                    **err_arguments
+                )
+            raise
+        except ConnectionError, err:
+            raise GoodDataTotallyDown(err.message)
+        return response
 
     def get_metadata(self):
         return self.get(self.MD_URI).json()
