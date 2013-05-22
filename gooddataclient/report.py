@@ -131,5 +131,5 @@ class Report(object):
         The report is ready when the response does not start
         with '{'
         '''
-        report_content = self.report_content or ''
-        return report_content and report_content[0] != '{'
+        return self.report_content is not None and \
+            (not self.report_content or self.report_content[0] != '{')
