@@ -144,27 +144,12 @@ class Project(object):
         self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
-        try:
-            response = self.connection.post(
-                self.PULL_URI % self.id,
-                {'pullIntegration': dir_name}
-            )
-            response.raise_for_status()
-        except HTTPError, err:
-            status_code = err.response.status_code
-            if status_code == 401:
-                self.connection.relogin()
-                response = self.connection.post(
-                    self.PULL_URI % self.id,
-                    {'pullIntegration': dir_name}
-                )
-            else:
-                err_json = err.response.json()['error']
-                raise UploadFailed(
-                    get_api_msg(err_json), gd_error=err_json,
-                    status_code=status_code, dir_name=dir_name
-                )
-
+        response = self.connection.post(
+            self.PULL_URI % self.id,
+            {'pullIntegration': dir_name},
+            raise_cls=UploadFailed,
+            dir_name=dir_name
+        )
         task_uri = response.json()['pullTask']['uri']
 
         if wait_for_finish:
