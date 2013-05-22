@@ -87,7 +87,7 @@ TIME_DROP = ('DROP IF EXISTS {tm.dt.%(schema_name)s.%(name)s} CASCADE;\n'
              'ALTER ATTRIBUTE {attr.time.second.of.day.%(schemaReference)s} '
              'DROP KEYS {f_%(schema_name)s.tm_%(name)s_id};\n')
 
-REFERENCE_DROP = 'ALTER ATTRIBUTE {attr.%(schemaReference)s.%(reference)s} DROP KEYS {%(identifier)s}\n;'
+REFERENCE_DROP = 'ALTER ATTRIBUTE {attr.%(schemaReference)s.%(reference)s} DROP KEYS {%(identifier)s};\n'
 
 LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} DROP LABELS {label.%(schema_name)s.%(reference)s.%(name)s};\n'
 
