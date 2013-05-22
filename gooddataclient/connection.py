@@ -89,18 +89,17 @@ class Connection(object):
             response = requests.request(method=call_method, **call_arguments)
             response.raise_for_status()
         except HTTPError, err:
-            if not err_msg:
-                try:
-                    err_msg = get_api_msg(err.response.json()['error'])
-                except (ValueError, KeyError):
-                    err_msg = str(err.response) + "for %s %s" % (call_method, call_arguments['url'])
             if raise_cls:
+                if not err_msg:
+                    try:
+                        err_msg = get_api_msg(err.response.json()['error'])
+                    except (ValueError, KeyError):
+                        err_msg = str(err.response) + "for %s %s" % (call_method, call_arguments['url'])
                 raise raise_cls(
                     err_msg, status_code=err.response.status_code,
                     **err_arguments
                 )
-            else:
-                raise err
+            raise
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
         return response
