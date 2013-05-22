@@ -58,10 +58,12 @@ class Connection(object):
             'headers': JSON_HEADERS,
             'auth': (self.username, self.password)
         }
-        return self.call('get', get_data, raise_cls, err_msg, **kwargs)
+        return self.request('get', get_data, raise_cls, err_msg, **kwargs)
 
-    def post(self, uri, data, headers=JSON_HEADERS, login=False,
-             raise_cls=GoodDataClientError, err_msg=None, **kwargs):
+    def post(
+        self, uri, data, headers=JSON_HEADERS, login=False,
+        raise_cls=HTTPError, err_msg=None, **kwargs
+    ):
         logger.debug('POST: %s' % uri)
         post_data = {
             'url': self.HOST + uri,
@@ -72,21 +74,19 @@ class Connection(object):
         if not login:
             post_data['cookies'] = self.cookies
 
-        return self.call('post', post_data, raise_cls, err_msg, **kwargs)
+        return self.request('post', post_data, raise_cls, err_msg, **kwargs)
 
-    def delete(self, uri,
-               raise_cls=GoodDataClientError, err_msg=None, **kwargs):
+    def delete(self, uri, raise_cls=HTTPError, err_msg=None, **kwargs):
         logger.debug('DELETE: %s' % uri)
         delete_data = {
             'url': self.HOST + uri,
             'auth': (self.username, self.password)
         }
-        return self.call('delete', delete_data, raise_cls, err_msg, **kwargs)
+        return self.request('delete', delete_data, raise_cls, err_msg, **kwargs)
 
-    def call(self, call_method, call_arguments, raise_cls, err_msg, **err_arguments):
+    def request(self, call_method, call_arguments, raise_cls, err_msg, **err_arguments):
         try:
-            get_or_post = getattr(requests, call_method)
-            response = get_or_post(**call_arguments)
+            response = requests.request(method=call_method, **call_arguments)
             response.raise_for_status()
         except HTTPError, err:
             if not err_msg:
