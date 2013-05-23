@@ -17,11 +17,12 @@ class Report(object):
     REPORT_DEFINITION_URI = '/gdc/md/%(project)s/obj/%(report)s'
     REPORT_EXEC_URI = '/gdc/xtab2/executor3'
     REPORT_EXPORT_URI = '/gdc/exporter/executor'
+    ID = None
 
-    def __init__(self, project, id):
+    def __init__(self, project, id=None):
         self.project = project
         self.connection = project.connection
-        self.id = id
+        self.id = id or self.ID
         self.exec_result = None
         self.export_download_uri = None
         self.report_content = None
