@@ -4,7 +4,7 @@ import os
 
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
-from gooddataclient.columns import Reference
+from gooddataclient.columns import Date
 from gooddataclient.dataset import DateDimension, Dataset
 from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
@@ -56,6 +56,22 @@ class TestDataset(unittest.TestCase):
             self.assertEquals('INCREMENTAL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
             sli_manifest = dataset.get_sli_manifest(full_upload=True)
             self.assertEquals('FULL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
+
+    def test_dates_sli_manifest(self):
+        _datetime = Date(title='Created at', format='yyyy-MM-dd HH:mm:SS',
+                          schemaReference='created_at', datetime=True)
+        _datetime.set_name_and_schema('_name', '_schema')
+        self.assertEquals(
+            'yyyy-MM-dd HH:mm:SS',
+            _datetime.get_sli_manifest_part(full_upload=False)[0]['constraints']['date']
+        )
+        _date = Date(title='Created at', format='yyyy-MM-dd',
+                          schemaReference='created_at', datetime=False)
+        _date.set_name_and_schema('_name', '_schema')
+        self.assertEquals(
+            'yyyy-MM-dd',
+            _date.get_sli_manifest_part(full_upload=False)[0]['constraints']['date']
+        )
 
     def test_no_upload(self):
         '''

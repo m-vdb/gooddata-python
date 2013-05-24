@@ -91,8 +91,6 @@ class Column(object):
                 }
         if self.referenceKey:
             part["referenceKey"] = 1
-        if self.format:
-            part['constraints'] = {'date': self.format}
         try:
             part['populates'] = self.populates()
         except NotImplementedError:
@@ -273,7 +271,8 @@ class Date(Fact):
     def get_sli_manifest_part(self, full_upload):
         parts = super(Date, self).get_sli_manifest_part(full_upload)
         parts.append(self.get_date_dt_column(full_upload))
-
+        format = 'yyyy-MM-dd HH:mm:SS' if self.datetime else 'yyyy-MM-dd'
+        parts[0]['constraints'] = {'date': format}
         if self.datetime:
             parts.extend(self.time.get_sli_manifest_part(full_upload))
 
