@@ -126,12 +126,9 @@ def retrieve_fact_tuples(column_json, dlc_info):
     if category == 'dt':
         column_title = column_title.replace(' (Date)', '')
         datetime = dlc_info.get('%s__time' % column_name, {}).get('datetime', False)
-        date_format = 'yyyy-MM-dd'
-        if datetime:
-            date_format = 'yyyy-MM-dd HH:mm:SS'
         return [
             (column_name, Date(
-                    title=column_title, format=date_format,
+                    title=column_title,
                     schemaReference=dlc_info[column_name]['schemaReference'],
                     datetime=datetime
             ))

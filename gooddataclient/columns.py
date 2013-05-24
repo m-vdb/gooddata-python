@@ -29,7 +29,7 @@ class Column(object):
 
     def __init__(
         self, title, folder=None, reference=None, schemaReference=None,
-        dataType=None, datetime=False, format=None, references_cp=None
+        dataType=None, datetime=False, references_cp=None
     ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
@@ -38,7 +38,6 @@ class Column(object):
         self.schemaReference = to_identifier(schemaReference)
         self.dataType = dataType
         self.datetime = datetime
-        self.format = format
         # an attribute useful for labels,
         # to know if they reference a connection point
         self.references_cp = references_cp
@@ -72,7 +71,7 @@ class Column(object):
     def get_schema_values(self):
         values = []
         for key in ('name', 'title', 'folder', 'ldmType', 'reference', 'schemaReference',
-                    'dataType', 'datetime', 'format'):
+                    'dataType', 'datetime'):
             value = getattr(self, key)
             if value:
                 if isinstance(value, bool):

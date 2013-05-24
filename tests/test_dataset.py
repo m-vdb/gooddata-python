@@ -58,15 +58,13 @@ class TestDataset(unittest.TestCase):
             self.assertEquals('FULL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
 
     def test_dates_sli_manifest(self):
-        _datetime = Date(title='Created at', format='yyyy-MM-dd HH:mm:SS',
-                          schemaReference='created_at', datetime=True)
+        _datetime = Date(title='Created at', schemaReference='created_at', datetime=True)
         _datetime.set_name_and_schema('_name', '_schema')
         self.assertEquals(
             'yyyy-MM-dd HH:mm:SS',
             _datetime.get_sli_manifest_part(full_upload=False)[0]['constraints']['date']
         )
-        _date = Date(title='Created at', format='yyyy-MM-dd',
-                          schemaReference='created_at', datetime=False)
+        _date = Date(title='Created at', schemaReference='created_at', datetime=False)
         _date.set_name_and_schema('_name', '_schema')
         self.assertEquals(
             'yyyy-MM-dd',
