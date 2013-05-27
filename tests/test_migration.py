@@ -99,8 +99,7 @@ class TestMigration(unittest.TestCase):
         country_dataset.create()
 
         shortname = Label(title='Short Name', reference='department')
-        created_at = Date(title='Created at', format='yyyy-MM-dd HH:mm:SS',
-                          schemaReference='created_at', datetime=True)
+        created_at = Date(title='Created at', schemaReference='created_at', datetime=True)
         country = Reference(title='Country', reference='country', schemaReference='Country')
 
         add1 = AddColumn(self.dataset.schema_name, 'country', country)
@@ -138,8 +137,8 @@ class TestMigration(unittest.TestCase):
 
         salary, Salary = examples.examples[2]
         Salary.payday = Date(
-            title='Pay Day', format='yyyy-MM-dd HH:mm:SS',
-            schemaReference='payment', folder='Salary', datetime=True
+            title='Pay Day', schemaReference='payment',
+            folder='Salary', datetime=True
         )
 
         dataset = Salary(self.project)
@@ -255,7 +254,7 @@ class TestMigration(unittest.TestCase):
         salary.create()
 
         new_payment = Fact(title='New Payment', dataType='BIGINT')
-        new_payday = Date(title='New payday', format='yyyy-MM-dd', schemaReference='payment')
+        new_payday = Date(title='New payday', schemaReference='payment')
         alt = AlterColumn(
             schema_name=salary.schema_name, col_name="payment",
             column=salary.payment, new_column=new_payment
@@ -274,7 +273,7 @@ class TestMigration(unittest.TestCase):
         self.assertTrue(salary.has_fact('payment', title='New Payment'))
         self.assertTrue(salary.has_date('payday', title='New payday (Date)'))
 
-        other_date = Date(title='Payday 2', format='yyyy-MM-dd HH:mm:SS', schemaReference='new_payment', datetime=True)
+        other_date = Date(title='Payday 2', schemaReference='new_payment', datetime=True)
         alt = AlterColumn(
             schema_name=salary.schema_name, col_name="payday",
             column=salary.payday, new_column=other_date
@@ -315,7 +314,7 @@ class TestMigration(unittest.TestCase):
 
         Salary.payment = Fact(title='Payment', folder='Salary', dataType='BIGINT')
         Salary.payday = None
-        Salary.due_date = Date(title='Due Date', datetime=True, format='yyyy-MM-dd HH:mm:SS', schemaReference='payment')
+        Salary.due_date = Date(title='Due Date', datetime=True, schemaReference='payment')
         engine = MigrationEngine(self.project, Salary)
         engine.migrate()
 

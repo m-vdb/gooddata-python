@@ -29,7 +29,7 @@ class Column(object):
 
     def __init__(
         self, title, folder=None, reference=None, schemaReference=None,
-        dataType=None, datetime=False, format=None, references_cp=None
+        dataType=None, datetime=False, references_cp=None
     ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
@@ -38,7 +38,6 @@ class Column(object):
         self.schemaReference = to_identifier(schemaReference)
         self.dataType = dataType
         self.datetime = datetime
-        self.format = format
         # an attribute useful for labels,
         # to know if they reference a connection point
         self.references_cp = references_cp
@@ -72,7 +71,7 @@ class Column(object):
     def get_schema_values(self):
         values = []
         for key in ('name', 'title', 'folder', 'ldmType', 'reference', 'schemaReference',
-                    'dataType', 'datetime', 'format'):
+                    'dataType', 'datetime'):
             value = getattr(self, key)
             if value:
                 if isinstance(value, bool):
@@ -91,8 +90,6 @@ class Column(object):
                 }
         if self.referenceKey:
             part["referenceKey"] = 1
-        if self.format:
-            part['constraints'] = {'date': self.format}
         try:
             part['populates'] = self.populates()
         except NotImplementedError:
@@ -273,7 +270,8 @@ class Date(Fact):
     def get_sli_manifest_part(self, full_upload):
         parts = super(Date, self).get_sli_manifest_part(full_upload)
         parts.append(self.get_date_dt_column(full_upload))
-
+        format = 'yyyy-MM-dd HH:mm:SS' if self.datetime else 'yyyy-MM-dd'
+        parts[0]['constraints'] = {'date': format}
         if self.datetime:
             parts.extend(self.time.get_sli_manifest_part(full_upload))
 

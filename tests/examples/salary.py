@@ -12,7 +12,7 @@ class Salary(Dataset):
     salary = ConnectionPoint(title='Salary', folder='Salary', dataType='VARCHAR(128)')
     worker = Reference(title='Worker', reference='worker', schemaReference='Worker', folder='Salary', dataType='VARCHAR(128)')
     payment = Fact(title='Payment', folder='Salary', dataType='INT')
-    payday = Date(title='Pay Day', format='yyyy-MM-dd', schemaReference='payment', folder='Salary')
+    payday = Date(title='Pay Day', schemaReference='payment', folder='Salary')
 
     class Meta(Dataset.Meta):
         column_order = ('salary', 'worker', 'payment', 'payday')
@@ -110,7 +110,6 @@ schema_xml = '''
       <name>payday</name>
       <title>Pay Day</title>
       <ldmType>DATE</ldmType>
-      <format>yyyy-MM-dd</format>
       <schemaReference>payment</schemaReference>
       <folder>Salary</folder>
     </column>
