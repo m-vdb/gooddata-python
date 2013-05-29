@@ -26,9 +26,8 @@ def write_tmp_file(content):
     return filename of the created temporary file
     '''
     fp, filename = mkstemp()
-
-    with open(filename, 'w+b') as file:
-        file.write(content)
+    os.write(fp, content)
+    os.close(fp)
 
     return filename
 
@@ -44,6 +43,8 @@ def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
     '''
     fieldnames = [part['columnName'] for part in sli_manifest['dataSetSLIManifest']['parts']]
     fp, filename = mkstemp()
+    # FIXME: shouldn't close and reopen the file
+    os.close(fp)
 
     with open(filename, 'w+b') as file:
         writer = csv.DictWriter(
@@ -72,6 +73,8 @@ def write_tmp_zipfile(files):
     return filename of the created temporary zip file
     '''
     fp, filename = mkstemp()
+    # FIXME: shouldn't close and reopen the file
+    os.close(fp)
 
     with ZipFile(filename, "w") as zip_file:
         for path, name in files:
