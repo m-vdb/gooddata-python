@@ -1,11 +1,15 @@
 import sys
 import os
 import unittest
+from tempfile import mkstemp
 from zipfile import ZipFile
 
+
 from gooddataclient.project import Project
-from gooddataclient.archiver import create_archive, write_tmp_csv_file, \
-    csv_to_list
+from gooddataclient.archiver import (
+    create_archive, write_tmp_csv_file,
+    csv_to_list, write_tmp_file
+)
 
 from tests import logger, examples
 
@@ -56,6 +60,45 @@ class TestArchiver(unittest.TestCase):
                 example.sli_manifest, [], [], keep_csv=True
             )
 
+    def test_mkstemp_file_management(self):
+        initial_number_of_opened_files = get_open_fds()
+
+        fp, filename = mkstemp()
+        current_number_of_opened_files = get_open_fds()
+        self.assertTrue(initial_number_of_opened_files < current_number_of_opened_files)
+
+        os.write(fp, 'fake_content')
+        with open(filename) as f:
+            self.assertEquals('fake_content', f.read())
+        os.close(fp)
+
+        final_number_of_opened_files = get_open_fds()
+        self.assertEquals(initial_number_of_opened_files, final_number_of_opened_files)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
+
+
+def get_open_fds():
+    '''
+    return the number of open file descriptors for current process
+
+    .. warning: will only work on UNIX-like os-es.
+    '''
+    import subprocess
+    import os
+
+    pid = os.getpid()
+    procs = subprocess.check_output( 
+        [ "lsof", '-w', '-Ff', "-p", str( pid ) ] )
+
+    nprocs = len( 
+        filter( 
+            lambda s: s and s[ 0 ] == 'f' and s[1: ].isdigit(),
+            procs.split( '\n' ) )
+        )
+    return nprocs
