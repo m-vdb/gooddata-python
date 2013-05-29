@@ -208,7 +208,7 @@ def get_references(dataset_name, sli_manifest):
         match = re.match(pattern, part["columnName"])
         if match:
             if match.group(1) != dataset_name:
-                _, schema_ref, reference, __ = part["populates"][0].split('.')
+                _, schema_ref, reference = part["populates"][0].split('.')[:3]
                 ref_list.append((schema_ref, reference))
 
     return dict(ref_list)
