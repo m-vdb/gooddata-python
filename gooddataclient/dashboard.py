@@ -1,4 +1,3 @@
-import json
 import urllib2
 import logging
 
@@ -40,6 +39,7 @@ class Dashboard(object):
         then retrieves a client_export,
         then polls the url to wait GD response,
         and lastly saves the response as a pdf.
+        :param date_filters: 
         '''
         logger.debug(
             'Exporting dashboard %(dashboard_name)s with filters %(date_filters)s'
@@ -85,8 +85,8 @@ class Dashboard(object):
             'project_id': self.project.id
         }
 
-        wildcard_filter = '?' + wildcard_filters['attribute'] + '=' + wildcard_filters['value']\
-            if wildcard_filters else ''
+        wildcard_filter = '?' + wildcard_filters['attribute'] + '=' \
+            + urllib2.quote(wildcard_filters['value'].encode('utf8')) if wildcard_filters else ''
 
         client_export_data = {
             "clientExport": {
@@ -121,9 +121,9 @@ class Dashboard(object):
             "executionContext": {
                 "filters": [
                     {
-                        "uri": "/gdc/md/" + self.project.id + "/obj/126",
+                        "uri": "/gdc/md/" + self.project.id + "/obj/" + str(date_filters['object_id']),
                         "constraint": {
-                            "type": "floating",
+                            "type": date_filters['type'],
                             "from": date_filters['from'],
                             "to": date_filters['to']
                         }

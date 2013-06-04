@@ -18,7 +18,7 @@ logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestDashboard(unittest.TestCase):
-    date_filters = {"from": -3, "to": -1}
+    date_filters = {"object_id": 126, "type": "floating", "from": -3, "to": -1}
     wildcard_filters = {
         'attribute': 'label.page.page_name',
         'value': 'fake_page'
