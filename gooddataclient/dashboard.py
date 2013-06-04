@@ -39,7 +39,7 @@ class Dashboard(object):
         then retrieves a client_export,
         then polls the url to wait GD response,
         and lastly saves the response as a pdf.
-        :param date_filters: 
+        :param date_filters:
         '''
         logger.debug(
             'Exporting dashboard %(dashboard_name)s with filters %(date_filters)s'
@@ -50,8 +50,7 @@ class Dashboard(object):
             }
         )
 
-        if not self.pdf_data:
-            self._poll_for_dashboard_data(date_filters, wildcard_filters)
+        self._poll_for_dashboard_data(date_filters, wildcard_filters)
 
         with open(output_path + '.pdf', 'wb') as handle:
             for block in self.pdf_data.iter_content(1024):
@@ -63,8 +62,7 @@ class Dashboard(object):
         '''
         Poll and retrieve the dashboard data, third step of the dashboard download
         '''
-        if not self.client_export_response_uri:
-            self._get_client_export(date_filters, wildcard_filters)
+        self._get_client_export(date_filters, wildcard_filters)
 
         self.pdf_data = self.connection.poll_server_response(
             self.client_export_response_uri,
@@ -78,8 +76,7 @@ class Dashboard(object):
         '''
         Retrieve the client export, second step of the dashboard download
         '''
-        if not self.execution_context_response_uri:
-            self._get_execution_context(date_filters)
+        self._get_execution_context(date_filters)
 
         client_export_uri = self.CLIENT_EXPORT_URI % {
             'project_id': self.project.id
