@@ -1,8 +1,11 @@
 import json
+import requests
 import time
+import urllib2
 import logging
 import os
 
+from gooddataclient.exceptions import DashboardExportError
 
 logger = logging.getLogger("gooddataclient")
 
@@ -30,6 +33,8 @@ class Dashboard(object):
 
     COMPANY_IDENTIFIER = 'label.page.company_name_2'
     PAGE_IDENTIFIER = 'label.page.page_name'
+
+    err_msg = 'An error occured while exporting dashboard %(id)s'
 
     ID = None
     NAME = None
@@ -96,9 +101,11 @@ class Dashboard(object):
             'to': date_filters['to']
         }
 
-        execution_context_response = self.project.connection.post(  # fixme raise
+        execution_context_response = self.project.connection.post(
             execution_context_uri,
-            json.loads(execution_context_data)
+            json.loads(execution_context_data),
+            raise_cls=DashboardExportError,
+            err_msg=self.err_msg % {'id': self.id}
         )
         self.execution_context_response_uri = execution_context_response.json()['uri']
 
@@ -107,10 +114,10 @@ class Dashboard(object):
         Retrieve the client export, second step of the pdf download
         '''
         if not self.execution_context_response_uri:
-            pass  # fixme raise
+            raise DashboardExportError('An execution context shoud be done'
+                                       + 'before retrieving the client export')
 
-        import urllib2
-        entity_name = urllib2.quote(entity.encode('utf8'))  # fixme avoid urllib2
+        entity_name = urllib2.quote(entity.encode('utf8'))
 
         client_export_uri = self.CLIENT_EXPORT_URI % {
             'project_id': self.project.id
@@ -127,34 +134,35 @@ class Dashboard(object):
             'dashboard_name': self.name
         }
 
-        client_export_response = self.project.connection.post(  # fixme raise
+        client_export_response = self.project.connection.post(
             client_export_uri,
-            json.loads(client_export_data)
+            json.loads(client_export_data),
+            raise_cls=DashboardExportError,
+            err_msg=self.err_msg % {'id': self.id}
         )
         self.client_export_response_uri = client_export_response.json()['asyncTask']['link']['poll']
 
-    def _poll_for_pdf(self):  # fixme use project poll
+    def _poll_for_pdf(self):
         '''
         Poll and retrieve the pdf data
         '''
         if not self.client_export_response_uri:
-            pass  # fixme raise
+            raise DashboardExportError('A client export shoud be done'
+                                       + 'before retrieving the pdf data')
 
-        while True:
-            response = self.project.connection.get(self.client_export_response_uri)
-            status = response.status_code
-            if status == 200:
-                break
-            if status == 202:
-                time.sleep(0.5)
-        self.pdf_data = response
+        self.pdf_data = self.connection.poll(
+            self.client_export_response_uri,
+            DashboardExportError,
+            {'id': self.id}
+        )
 
     def _save_as_pdf(self, output_dir, entity):
         '''
         Saves the downloaded data as pdf.
         '''
         if not self.pdf_data:
-            pass  # fixme raise
+            raise DashboardExportError('A poll shoud be done'
+                                       + 'before saving the pdf data as pdf')
 
         with open(output_dir + entity + '.pdf', 'wb') as handle:
             for block in self.pdf_data.iter_content(1024):
@@ -170,7 +178,6 @@ class Dashboard(object):
         # upload the pdf file to the web service
         filename = pdf_name + '.pdf'
         filepath = output_dir + filename
-        import requests  # fixme un import
         requests.post(
             url=self.PPT_UPLOAD_FILE,
             data={'data': 'data'},

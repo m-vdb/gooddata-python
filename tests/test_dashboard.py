@@ -2,7 +2,6 @@ import os
 import sys
 import unittest
 
-
 from gooddataclient.connection import Connection
 from gooddataclient.project import Project
 from gooddataclient.dashboard import Dashboard
@@ -85,6 +84,10 @@ class TestDashboard(unittest.TestCase):
         except:
             self.fail('ppt should be found')
 
+        self.assertRaises(
+            IOError, self.dashboard._pdf_to_ppt,
+            output_dir='./', pdf_name='wrong_name', delete_pdf=False
+        )
 
 if __name__ == '__main__':
     unittest.main()
