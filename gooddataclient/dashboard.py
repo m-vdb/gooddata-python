@@ -68,8 +68,7 @@ class Dashboard(object):
 
         self.pdf_data = self.connection.poll_server_response(
             self.client_export_response_uri,
-            DashboardExportError,
-            {
+            DashboardExportError, err_json={
                 'id': self.id,
                 'wildcard_filters': wildcard_filters
             }
