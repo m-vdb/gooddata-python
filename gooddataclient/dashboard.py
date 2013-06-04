@@ -1,6 +1,5 @@
 import json
 import requests
-import time
 import urllib2
 import logging
 import os
@@ -150,7 +149,7 @@ class Dashboard(object):
             raise DashboardExportError('A client export shoud be done'
                                        + 'before retrieving the pdf data')
 
-        self.pdf_data = self.connection.poll(
+        self.pdf_data = self.connection.poll_server_response(
             self.client_export_response_uri,
             DashboardExportError,
             {'id': self.id}
