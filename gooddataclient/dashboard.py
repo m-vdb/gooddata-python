@@ -39,8 +39,16 @@ class Dashboard(object):
         then retrieves a client_export,
         then polls the url to wait GD response,
         and lastly saves the response as a pdf.
-        :param common_filters:
-        :param wildcard_filter:
+
+        :param common_filters:      a list of filters that will be
+                                    used in the execution context.
+                                    This filter uses objects ids.
+        ex: common_filters = [{"object_id": 126, "constraint": {"type": "floating", "from": -3, "to": -1}}]
+
+        :param wildcard_filter:     a list of filters that will be
+                                    used in the client export.
+                                    This filter uses objects names.
+        ex: wildcard_filter = {'attribute': 'label.page.page_name', 'value': 'fake_page'}
         '''
         logger.debug(
             'Exporting dashboard %(dashboard_name)s with filters %(common_filters)s'
