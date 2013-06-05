@@ -18,8 +18,8 @@ logger.set_log_level(debug=('-v' in sys.argv))
 
 
 class TestDashboard(unittest.TestCase):
-    date_filters = {"object_id": 126, "type": "floating", "from": -3, "to": -1}
-    wildcard_filters = {
+    common_filters = [{"object_id": 126, "constraint": {"type": "floating", "from": -3, "to": -1}}]
+    wildcard_filter = {
         'attribute': 'label.page.page_name',
         'value': 'fake_page'
     }
@@ -39,22 +39,22 @@ class TestDashboard(unittest.TestCase):
             'project_id': test_dashboard_project_id,
             'user_id': user_id
         }
-        self.dashboard._get_execution_context(self.date_filters)
+        self.dashboard._get_execution_context(self.common_filters)
         self.assertIn(expected_answer, self.dashboard.execution_context_response_uri)
 
     def test_get_client_export(self):
         expected_answer = '/gdc/projects/%(project_id)s/clientexport/' % {
             'project_id': test_dashboard_project_id
         }
-        self.dashboard._get_client_export(self.date_filters, self.wildcard_filters)
+        self.dashboard._get_client_export(self.common_filters, self.wildcard_filter)
         self.assertIn(expected_answer, self.dashboard.client_export_response_uri)
 
     def test_poll_for_dashboard_data(self):
-        self.dashboard._poll_for_dashboard_data(self.date_filters, self.wildcard_filters)
+        self.dashboard._poll_for_dashboard_data(self.common_filters, self.wildcard_filter)
         self.assertIsNotNone(self.dashboard.pdf_data)
 
     def test_save_as_pdf(self):
-        self.dashboard.save_as_pdf(self.date_filters, self.wildcard_filters, self.output_path)
+        self.dashboard.save_as_pdf(self.common_filters, self.wildcard_filter, self.output_path)
         try:
             os.remove(self.output_path + '.pdf')
         except:

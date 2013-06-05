@@ -32,25 +32,26 @@ class Dashboard(object):
         self.client_export_response_uri = None
         self.pdf_data = None
 
-    def save_as_pdf(self, date_filters, wildcard_filters, output_path):
+    def save_as_pdf(self, common_filters, wildcard_filter, output_path):
         '''
         Saves the exported dashboard as pdf.
         First retrieves an execution_context,
         then retrieves a client_export,
         then polls the url to wait GD response,
         and lastly saves the response as a pdf.
-        :param date_filters:
+        :param common_filters:
+        :param wildcard_filter:
         '''
         logger.debug(
-            'Exporting dashboard %(dashboard_name)s with filters %(date_filters)s'
-            + ' and %(wildcard_filters)s' % {
+            'Exporting dashboard %(dashboard_name)s with filters %(common_filters)s'
+            + ' and %(wildcard_filter)s' % {
                 'dashboard_name': self.name,
-                'date_filters': date_filters,
-                'wildcard_filters': wildcard_filters
+                'common_filters': common_filters,
+                'wildcard_filter': wildcard_filter
             }
         )
 
-        self._poll_for_dashboard_data(date_filters, wildcard_filters)
+        self._poll_for_dashboard_data(common_filters, wildcard_filter)
 
         with open(output_path + '.pdf', 'wb') as handle:
             for block in self.pdf_data.iter_content(1024):
@@ -58,32 +59,32 @@ class Dashboard(object):
                     break
                 handle.write(block)
 
-    def _poll_for_dashboard_data(self, date_filters, wildcard_filters):
+    def _poll_for_dashboard_data(self, common_filters, wildcard_filter):
         '''
         Poll and retrieve the dashboard data, third step of the dashboard download
         '''
-        self._get_client_export(date_filters, wildcard_filters)
+        self._get_client_export(common_filters, wildcard_filter)
 
         self.pdf_data = self.connection.poll_server_response(
             self.client_export_response_uri,
             DashboardExportError, err_json={
                 'id': self.id,
-                'wildcard_filters': wildcard_filters
+                'wildcard_filter': wildcard_filter
             }
         )
 
-    def _get_client_export(self, date_filters, wildcard_filters):
+    def _get_client_export(self, common_filters, wildcard_filter):
         '''
         Retrieve the client export, second step of the dashboard download
         '''
-        self._get_execution_context(date_filters)
+        self._get_execution_context(common_filters)
 
         client_export_uri = self.CLIENT_EXPORT_URI % {
             'project_id': self.project.id
         }
 
-        wildcard_filter = '?' + wildcard_filters['attribute'] + '=' \
-            + urllib2.quote(wildcard_filters['value'].encode('utf8')) if wildcard_filters else ''
+        wildcard_filter = '?' + wildcard_filter['attribute'] + '=' \
+            + urllib2.quote(wildcard_filter['value'].encode('utf8')) if wildcard_filter else ''
 
         client_export_data = {
             "clientExport": {
@@ -103,7 +104,7 @@ class Dashboard(object):
         )
         self.client_export_response_uri = client_export_response.json()['asyncTask']['link']['poll']
 
-    def _get_execution_context(self, date_filters):
+    def _get_execution_context(self, common_filters):
         '''
         Retrieve the execution context, first step of the dashboard download.
         '''
@@ -116,18 +117,16 @@ class Dashboard(object):
 
         execution_context_data = {
             "executionContext": {
-                "filters": [
-                    {
-                        "uri": "/gdc/md/" + self.project.id + "/obj/" + str(date_filters['object_id']),
-                        "constraint": {
-                            "type": date_filters['type'],
-                            "from": date_filters['from'],
-                            "to": date_filters['to']
-                        }
-                    }
-                ]
+                "filters": []
             }
         }
+        for common_filter in common_filters:
+            execution_context_data['executionContext']['filters'].append(
+                {
+                    "uri": "/gdc/md/" + self.project.id + "/obj/" + str(common_filter['object_id']),
+                    "constraint": common_filter['constraint']
+                }
+            )
 
         execution_context_response = self.project.connection.post(
             execution_context_uri,
