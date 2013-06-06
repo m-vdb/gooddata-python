@@ -137,7 +137,7 @@ class Dashboard(object):
                     }
                 )
             except KeyError:
-                err_msg = '%s is missing object_id or constraint key' % common_filter
+                err_msg = 'common_filter %s is missing object_id or constraint key' % common_filter
                 raise DashboardExportError(err_msg)
 
         execution_context_response = self.project.connection.post(
