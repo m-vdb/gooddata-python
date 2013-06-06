@@ -3,6 +3,7 @@ import sys
 import unittest
 
 from gooddataclient.connection import Connection
+from gooddataclient.exceptions import DashboardExportError
 from gooddataclient.project import Project
 from gooddataclient.dashboard import Dashboard
 
@@ -41,6 +42,10 @@ class TestDashboard(unittest.TestCase):
         }
         self.dashboard._get_execution_context(self.common_filters)
         self.assertIn(expected_answer, self.dashboard.execution_context_response_uri)
+
+
+        common_filters = [{"wrong_object_id": 126, "constraint": {"type": "floating", "from": -3, "to": -1}}]
+        self.assertRaises(DashboardExportError, self.dashboard._get_execution_context, common_filters)
 
     def test_get_client_export(self):
         expected_answer = '/gdc/projects/%(project_id)s/clientexport/' % {

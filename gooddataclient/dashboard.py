@@ -129,12 +129,16 @@ class Dashboard(object):
             }
         }
         for common_filter in common_filters:
-            execution_context_data['executionContext']['filters'].append(
-                {
-                    "uri": "/gdc/md/" + self.project.id + "/obj/" + str(common_filter['object_id']),
-                    "constraint": common_filter['constraint']
-                }
-            )
+            try:
+                execution_context_data['executionContext']['filters'].append(
+                    {
+                        "uri": "/gdc/md/" + self.project.id + "/obj/" + str(common_filter['object_id']),
+                        "constraint": common_filter['constraint']
+                    }
+                )
+            except KeyError:
+                err_msg = '%s is missing object_id or constraint key' % common_filter
+                raise DashboardExportError(err_msg)
 
         execution_context_response = self.project.connection.post(
             execution_context_uri,
