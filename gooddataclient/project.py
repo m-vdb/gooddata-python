@@ -125,7 +125,7 @@ class Project(object):
 
         if wait_for_finish:
             for task_uri in task_uris:
-                self.poll(task_uri, 'wTaskStatus.status', MaqlExecutionFailed, {'maql': maql})
+                self.connection.poll_gd_response(task_uri, 'wTaskStatus.status', MaqlExecutionFailed, {'maql': maql})
 
     def execute_dml(self, maql):
         """
@@ -142,7 +142,7 @@ class Project(object):
         )
 
         uri = response.json()['uri']
-        self.poll(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
+        self.connection.poll_gd_response(uri, 'taskState.status', DMLExecutionFailed, {'maql': maql})
 
     def integrate_uploaded_data(self, dir_name, wait_for_finish=True):
         response = self.connection.post(
@@ -154,33 +154,7 @@ class Project(object):
         task_uri = response.json()['pullTask']['uri']
 
         if wait_for_finish:
-            self.poll(task_uri, 'taskStatus', UploadFailed, {'dir_name': dir_name})
-
-    def poll(self, uri, status_field, ErrorClass, err_json=None):
-        """
-        This function is useful to poll a given uri. It looks
-        at the `status_field` to know the status of the task.
-
-        In case of failure, it will raise an error of the type
-        ErrorClass, with an extra information defined by `err_json`.
-        """
-        while True:
-            status = response = self.connection.get(uri=uri).json()
-
-            for field in status_field.split('.'):
-                status = status[field]
-            logger.debug(status)
-            if status == 'OK':
-                break
-            if status in ('ERROR', 'WARNING'):
-                err_json = err_json or {}
-                err_msg = 'An error occured while polling uri %(uri)s'
-                raise ErrorClass(
-                    err_msg, response=response,
-                    custom_error=err_json, uri=uri
-                )
-
-            time.sleep(0.5)
+            self.connection.poll_gd_response(task_uri, 'taskStatus', UploadFailed, {'dir_name': dir_name})
 
     def get_using(self, object_id):
         """

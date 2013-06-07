@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 import simplejson as json
 import requests
@@ -8,7 +9,7 @@ from requests.exceptions import (
 )
 
 from gooddataclient.exceptions import (
-    AuthenticationError, GoodDataTotallyDown, GoodDataClientError, get_api_msg
+    AuthenticationError, GoodDataTotallyDown, get_api_msg
 )
 from gooddataclient.archiver import create_archive, DEFAULT_ARCHIVE_NAME
 
@@ -102,6 +103,52 @@ class Connection(object):
             raise
         except ConnectionError, err:
             raise GoodDataTotallyDown(err.message)
+        return response
+
+    def poll_gd_response(self, uri, status_field, ErrorClass, err_json=None):
+        """
+        This function is useful to poll a given uri. It looks
+        at the `status_field` to know the status of the task.
+
+        In case of failure, it will raise an error of the type
+        ErrorClass, with an extra information defined by `err_json`.
+        """
+        while True:
+            status = response = self.get(uri=uri).json()
+
+            for field in status_field.split('.'):
+                status = status[field]
+            logger.debug(status)
+            if status == 'OK':
+                break
+            if status in ('ERROR', 'WARNING'):
+                err_json = err_json or {}
+                err_msg = 'An error occured while polling uri %(uri)s'
+                raise ErrorClass(
+                    err_msg, response=response,
+                    custom_error=err_json, uri=uri
+                )
+
+            time.sleep(0.5)
+
+    def poll_server_response(self, uri, ErrorClass, err_json):
+        '''
+        This function is usefulto poll an uri, looking at
+        the server's response field to know the status.
+        '''
+        while True:
+            response = self.get(uri)
+            status = response.status_code
+            if status == 200:
+                break
+            if status == 202:
+                time.sleep(0.5)
+            else:
+                err_msg = 'An error occured while polling uri %(uri)s'
+                raise ErrorClass(
+                    err_msg, response=response,
+                    custom_error=err_json, uri=uri
+                )
         return response
 
     def get_metadata(self):
