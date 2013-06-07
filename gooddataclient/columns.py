@@ -29,7 +29,7 @@ class Column(object):
 
     def __init__(
         self, title, folder=None, reference=None, schemaReference=None,
-        dataType=None, datetime=False, references_cp=None
+        dataType=None, datetime=False, references_cp=False
     ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
