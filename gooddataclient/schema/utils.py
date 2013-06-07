@@ -153,12 +153,12 @@ def retrieve_dlc_info(dataset_name, column_json, sli_manifest):
     else:
         data_type = column_type
 
-    match = re.match("d_[a-z_]+\.nm_([a-z_]+)", identifier)
-    match_fact = re.match("f_[a-z_]+.f_([a-z_]+)", identifier)
-    match_cp = re.match("f_[a-z_]+\.nm_([a-z_]+)", identifier)
-    match_dt = re.match("f_%s\.dt_([a-z_]+)_id" % dataset_name, identifier)
-    match_tm = re.match("f_%s\.tm_([a-z_]+)" % dataset_name, identifier)
-    match_id = re.match("f_%s\.([a-z_]+)_id" % dataset_name, identifier)
+    match = re.match("d_[a-z_1-9]+\.nm_([a-z_1-9]+)", identifier)
+    match_fact = re.match("f_[a-z_1-9]+.f_([a-z_1-9]+)", identifier)
+    match_cp = re.match("f_[a-z_1-9]+\.nm_([a-z_1-9]+)", identifier)
+    match_dt = re.match("f_%s\.dt_([a-z_1-9]+)_id" % dataset_name, identifier)
+    match_tm = re.match("f_%s\.tm_([a-z_1-9]+)" % dataset_name, identifier)
+    match_id = re.match("f_%s\.([a-z_1-9]+)_id" % dataset_name, identifier)
 
     match = match or match_cp or match_fact
     if match:
