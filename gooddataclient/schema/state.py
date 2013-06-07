@@ -1,4 +1,4 @@
-from gooddataclient.columns import Reference
+from gooddataclient.columns import Reference, ConnectionPoint
 from gooddataclient.exceptions import DataSetNotFoundError
 from gooddataclient.schema.utils import (
     retrieve_column_tuples, retrieve_dlc_info, get_references, attr_is_cp,
@@ -295,6 +295,10 @@ class DiffState(object):
         self.old_keys = set(old_state)
         self.new_keys = set(new_state)
         self.intersect = self.new_keys.intersection(self.old_keys)
+        self.added_columns = self.get_added_columns()
+        self.deleted_columns = self.get_deleted_columns()
+        self.altered_columns = self.get_altered_columns()
+        self.handle_factsof_if_needed()
 
     def get_diff_state(self):
         """
@@ -306,9 +310,9 @@ class DiffState(object):
                                 - deleted
         """
         return {
-            'added': self.get_added_columns(),
-            'altered': self.get_altered_columns(),
-            'deleted': self.get_deleted_columns()
+            'added': self.added_columns,
+            'altered': self.altered_columns,
+            'deleted': self.deleted_columns
         }
 
     def get_added_columns(self):
@@ -329,3 +333,13 @@ class DiffState(object):
                 }
 
         return altered_columns
+
+    def handle_factsof_if_needed(self):
+        if 'factsof' in self.deleted_columns:
+            cp_found = False
+            for value in self.added_columns.itervalues():
+                if isinstance(value, ConnectionPoint):
+                    cp_found = True
+                    break
+            if not cp_found:
+                del self.deleted_columns['factsof']
