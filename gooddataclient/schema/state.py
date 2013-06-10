@@ -335,6 +335,13 @@ class DiffState(object):
         return altered_columns
 
     def handle_factsof_if_needed(self):
+        '''
+        If a dataset has no ConnectionPoint, GD creates one
+        called factsof.
+        The migration engine when comparing old columns and new ones
+        will detect that factsof exists only on GD, and try to delete it.
+        We want to delete it only if there is a new ConnectionPoint.
+        '''
         if 'factsof' in self.deleted_columns:
             cp_found = False
             for value in self.added_columns.itervalues():
