@@ -37,7 +37,6 @@ class Dataset(State):
             if isinstance(column, Label):
                 column.references_cp = True if isinstance(getattr(self, column.reference), ConnectionPoint)\
                     else False
-                column.references_cp = True
             # need to know which column is connection point
             if isinstance(column, ConnectionPoint):
                 self._connection_point = name
