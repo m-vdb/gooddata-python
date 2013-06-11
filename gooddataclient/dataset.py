@@ -3,7 +3,7 @@ import logging
 import inspect
 import re
 
-from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
+from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed, RowDeletionError
 from gooddataclient import text
 from gooddataclient.columns import (
     Column, Date, Attribute, ConnectionPoint, Label, Reference, Fact
@@ -335,6 +335,11 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
         :param where_clause:    explicitly define the where clause (maql syntax).
         :param where_values:    list of the column values to delete.
         """
+        if not self._has_cp and not column:
+            raise RowDeletionError(
+                'Dataset %s has no ConnectionPoint.'
+                ' Please provide a column to delete rows.' % (self.schema_name)
+            )
         from_column = column if column else getattr(self, self._connection_point)
         return from_column.get_delete_maql(to_identifier(self.schema_name), where_clause, where_values)
 

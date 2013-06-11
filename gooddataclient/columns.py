@@ -8,7 +8,7 @@ from gooddataclient.schema.maql import (
     # deletion
     FACT_DROP, ATTRIBUTE_DROP, DATE_DROP, TIME_DROP,
     REFERENCE_DROP, LABEL_DROP,
-    DELETE_ROW, DELETE_IDENTIFIER,
+    DELETE_ROW, DELETE_IDENTIFIER, DELETE_WHERE_CLAUSE,
     # alteration
     ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE,
     DATE_ALTER_TITLE, LABEL_ALTER_TITLE,
@@ -148,8 +148,9 @@ class Column(object):
         if not where_clause:
             if not where_values:
                 raise RowDeletionError('Please set where_clause or where_values')
+
             where_clause_values = '", "'.join([value for value in where_values])
-            where_clause = '%(where_identifier)s IN ("%(where_clause_values)s")' % {
+            where_clause = DELETE_WHERE_CLAUSE % {
                 'where_clause_values': where_clause_values,
                 'where_identifier': DELETE_IDENTIFIER % {
                     'column_name': self.name,
@@ -158,13 +159,12 @@ class Column(object):
                 }
             }
 
-        type = 'attr' if (self.ldmType == ConnectionPoint.ldmType) else 'label'
         return DELETE_ROW % {
             'where_clause': where_clause,
             'from_identifier': DELETE_IDENTIFIER % {
                 'column_name': self.name,
                 'schema_name': schema_name,
-                'type': type
+                'type': 'attr' if (self.ldmType == ConnectionPoint.ldmType) else 'label'
             }
         }
 
