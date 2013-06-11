@@ -13,10 +13,8 @@ def to_title(text):
 
 
 def gd_repr(text):
-    #wrong way
-    #return repr(text).replace("'", '"')
     if isinstance(text, int):
         return str(text)
     if isinstance(text, str):
-        return '"%s"' % text
+        return '"%s"' % text.replace('"', '\\"')
     raise NotImplementedError
