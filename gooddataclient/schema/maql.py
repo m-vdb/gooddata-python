@@ -115,4 +115,4 @@ HYPERLINK_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
 
 DELETE_ROW = 'DELETE FROM %(from_identifier)s WHERE %(where_clause)s;'
 DELETE_IDENTIFIER = '{%(type)s.%(schema_name)s.%(column_name)s}'
-DELETE_WHERE_CLAUSE = '%(where_identifier)s IN ("%(where_clause_values)s")'
+DELETE_WHERE_CLAUSE = '%(where_identifier)s IN (%(where_clause_values)s)'

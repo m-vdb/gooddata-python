@@ -149,7 +149,7 @@ class Column(object):
             if not where_values:
                 raise RowDeletionError('Please set where_clause or where_values')
 
-            where_clause_values = '", "'.join([value for value in where_values])
+            where_clause_values = ', '.join([repr(value) for value in where_values])
             where_clause = DELETE_WHERE_CLAUSE % {
                 'where_clause_values': where_clause_values,
                 'where_identifier': DELETE_IDENTIFIER % {
