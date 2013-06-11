@@ -8,12 +8,14 @@ from gooddataclient.schema.maql import (
     # deletion
     FACT_DROP, ATTRIBUTE_DROP, DATE_DROP, TIME_DROP,
     REFERENCE_DROP, LABEL_DROP,
+    DELETE_ROW, DELETE_IDENTIFIER,
     # alteration
     ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE,
     DATE_ALTER_TITLE, LABEL_ALTER_TITLE,
     HYPERLINK_ALTER_TITLE, TIME_ALTER_TITLE
 )
 from gooddataclient.text import to_identifier, to_title
+from gooddataclient.exceptions import RowDeletionError
 
 
 class Column(object):
@@ -134,6 +136,37 @@ class Column(object):
             maql += self.time.get_maql()
 
         return maql % self
+
+    def get_delete_maql(self, schema_name, where_clause, where_values):
+        """
+        A function to retrieve the maql to delete the rows from the current column,
+        with a where_clause or with where_values.
+        :param schema_name:     the name of the dataset that contains the column.
+        :param where_clause:    explicitly define the where clause (maql syntax).
+        :param where_values:    list of the values to delete.
+        """
+        if not where_clause:
+            if not where_values:
+                raise RowDeletionError('Please set where_clause or where_values')
+            where_clause_values = '", "'.join([value for value in where_values])
+            where_clause = '%(where_identifier)s IN ("%(where_clause_values)s")' % {
+                'where_clause_values': where_clause_values,
+                'where_identifier': DELETE_IDENTIFIER % {
+                    'column_name': self.name,
+                    'schema_name': schema_name,
+                    'type': 'label'
+                }
+            }
+
+        type = 'attr' if (self.ldmType == ConnectionPoint.ldmType) else 'label'
+        return DELETE_ROW % {
+            'where_clause': where_clause,
+            'from_identifier': DELETE_IDENTIFIER % {
+                'column_name': self.name,
+                'schema_name': schema_name,
+                'type': type
+            }
+        }
 
     def get_drop_maql(self, schema_name, name):
         """

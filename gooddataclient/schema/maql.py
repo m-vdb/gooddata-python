@@ -113,4 +113,5 @@ HYPERLINK_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
 # Row deletion #
 ################
 
-DELETE_ROW = 'DELETE FROM {attr.%(schema_name)s.%(connection_point)s} WHERE %(where_clause)s;'
+DELETE_ROW = 'DELETE FROM %(from_identifier)s WHERE %(where_clause)s;'
+DELETE_IDENTIFIER = '{%(type)s.%(schema_name)s.%(column_name)s}'
