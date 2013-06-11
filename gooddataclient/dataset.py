@@ -335,7 +335,8 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
         :param where_clause:    explicitly define the where clause (maql syntax).
         :param where_values:    list of the column values to delete.
         """
-        if not self._has_cp and not column:
+        # to generate where_clause from where_values, we needs a column or a connection point
+        if not where_clause and not self._has_cp and not column:
             raise RowDeletionError(
                 'Dataset %s has no ConnectionPoint.'
                 ' Please provide a column to delete rows.' % (self.schema_name)
