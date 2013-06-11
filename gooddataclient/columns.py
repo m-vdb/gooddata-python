@@ -14,7 +14,7 @@ from gooddataclient.schema.maql import (
     DATE_ALTER_TITLE, LABEL_ALTER_TITLE,
     HYPERLINK_ALTER_TITLE, TIME_ALTER_TITLE
 )
-from gooddataclient.text import to_identifier, to_title
+from gooddataclient.text import to_identifier, to_title, gd_repr
 from gooddataclient.exceptions import RowDeletionError
 
 
@@ -149,7 +149,7 @@ class Column(object):
             if not where_values:
                 raise RowDeletionError('Please set where_clause or where_values')
 
-            where_clause_values = ', '.join([repr(value) for value in where_values])
+            where_clause_values = ', '.join([gd_repr(value) for value in where_values])
             where_clause = DELETE_WHERE_CLAUSE % {
                 'where_clause_values': where_clause_values,
                 'where_identifier': DELETE_IDENTIFIER % {
@@ -164,7 +164,7 @@ class Column(object):
             'from_identifier': DELETE_IDENTIFIER % {
                 'column_name': self.name,
                 'schema_name': schema_name,
-                'type': 'attr' if (self.ldmType == ConnectionPoint.ldmType) else 'label'
+                'type': 'attr'
             }
         }
 

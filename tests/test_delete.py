@@ -29,14 +29,14 @@ class TestDelete(unittest.TestCase):
         dataset.create()
 
         expected_maql_delete_department_row = "DELETE FROM {attr.department.department}"\
-            + " WHERE {label.department.city} IN ('Boston', 'NYC');"
+            + " WHERE {label.department.city} IN (\"Boston\", \"NYC\");"
         self.assertEquals(
             expected_maql_delete_department_row,
-            dataset.get_maql_delete(where_clause="{label.department.city} IN ('Boston', 'NYC')")
+            dataset.get_maql_delete(where_clause="{label.department.city} IN (\"Boston\", \"NYC\")")
         )
 
         expected_maql_delete_department_row_with_ids = "DELETE FROM {attr.department.department}"\
-            + " WHERE {label.department.department} IN ('d1', 'd2');"
+            + " WHERE {label.department.department} IN (\"d1\", \"d2\");"
         self.assertEquals(
             expected_maql_delete_department_row_with_ids,
             dataset.get_maql_delete(where_values=["d1", "d2"])
@@ -46,13 +46,13 @@ class TestDelete(unittest.TestCase):
             dataset.get_maql_delete(column=dataset.department, where_values=["d1", "d2"])
         )
 
-        expected_maql_delete_city_row = "DELETE FROM {label.department.city}"\
-            + " WHERE {label.department.city} IN ('Boston', 'NYC');"
+        expected_maql_delete_city_row = "DELETE FROM {attr.department.city}"\
+            + " WHERE {label.department.city} IN (\"Boston\", \"NYC\");"
         self.assertEquals(
             expected_maql_delete_city_row,
             dataset.get_maql_delete(
                 column=dataset.city,
-                where_clause="{label.department.city} IN ('Boston', 'NYC')"
+                where_clause="{label.department.city} IN (\"Boston\", \"NYC\")"
             )
         )
         self.assertEquals(
@@ -64,7 +64,7 @@ class TestDelete(unittest.TestCase):
         )
         self.assertRaises(RowDeletionError, dataset.get_maql_delete)
 
-        expected_maql_delete_row_with_id = "DELETE FROM {label.department.city}"\
+        expected_maql_delete_row_with_id = "DELETE FROM {attr.department.city}"\
             + " WHERE {label.department.city} IN (119, 120);"
         self.assertEquals(
             expected_maql_delete_row_with_id,
