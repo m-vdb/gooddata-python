@@ -12,9 +12,9 @@ def to_title(text):
     return text.strip()
 
 
-def gd_repr(text):
-    if isinstance(text, int):
-        return str(text)
-    if isinstance(text, str):
-        return '"%s"' % text.replace('"', '\\"')
+def gd_repr(value):
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, str):
+        return '"%s"' % value.replace('"', '\\"')
     raise NotImplementedError

@@ -137,10 +137,11 @@ class Column(object):
 
         return maql % self
 
-    def get_delete_maql(self, schema_name, where_clause, where_values):
+    def get_delete_maql(self, schema_name, where_clause=None, where_values=None):
         """
         A function to retrieve the maql to delete the rows from the current column,
         with a where_clause or with where_values.
+
         :param schema_name:     the name of the dataset that contains the column.
         :param where_clause:    explicitly define the where clause (maql syntax).
         :param where_values:    list of the values to delete.
@@ -149,7 +150,7 @@ class Column(object):
             if not where_values:
                 raise RowDeletionError('Please set where_clause or where_values')
 
-            where_clause_values = ', '.join([gd_repr(value) for value in where_values])
+            where_clause_values = ', '.join(gd_repr(value) for value in where_values)
             where_clause = DELETE_WHERE_CLAUSE % {
                 'where_clause_values': where_clause_values,
                 'where_identifier': DELETE_IDENTIFIER % {
