@@ -2,9 +2,9 @@ import sys
 import unittest
 
 from gooddataclient.project import Project, delete_projects_by_name
+from gooddataclient.dataset import Dataset
 from gooddataclient.connection import Connection
-from gooddataclient.columns import Reference, HyperLink, Attribute, Fact
-
+from gooddataclient.columns import Reference, HyperLink, Attribute, Fact, ConnectionPoint
 from tests.credentials import password, username, gd_token, test_project_name
 from tests import logger, examples
 
@@ -111,6 +111,16 @@ class TestState(unittest.TestCase):
         self.assertFalse(remote_diff['added'])
         self.assertFalse(remote_diff['deleted'])
 
+    def test_remote_diff_factsof(self):
+        class Snapshot(Dataset):
+            wrong_snapshot_id = Attribute(title='snapshot_id', dataType='VARCHAR(20)')
+        Snapshot(self.project).create()
+        remote_diff = Snapshot(self.project).get_remote_diff()
+        self.assertTrue('factsof' not in remote_diff['deleted'])
+
+        Snapshot.real_snapshot_id = ConnectionPoint(title='snapshot_id')
+        remote_diff = Snapshot(self.project).get_remote_diff()
+        self.assertTrue('factsof' in remote_diff['deleted'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -95,7 +95,7 @@ class AlterColumn(Action):
         self.new_attrs.pop('folder_title', None)
 
         self.alteration_state = self._alteration_state()
-        
+
     def _alteration_state(self):
         # if same column classes
         same_columns = type(self.column) is type(self.new_column)
