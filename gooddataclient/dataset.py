@@ -35,8 +35,10 @@ class Dataset(State):
             # need to mark the labels referencing
             # connection points, they are different
             if isinstance(column, Label):
-                column.references_cp = True if isinstance(getattr(self, column.reference), ConnectionPoint)\
-                    else False
+                if isinstance(getattr(self, column.reference), ConnectionPoint):
+                    column.references_cp = True
+                else:
+                    column.references_cp = False
             # need to know which column is connection point
             if isinstance(column, ConnectionPoint):
                 self._connection_point = name
