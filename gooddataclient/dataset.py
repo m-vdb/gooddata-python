@@ -3,7 +3,7 @@ import logging
 import inspect
 import re
 
-from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
+from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed, RowDeletionError
 from gooddataclient import text
 from gooddataclient.columns import (
     Column, Date, Attribute, ConnectionPoint, Label, Reference, Fact
@@ -11,7 +11,7 @@ from gooddataclient.columns import (
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
 from gooddataclient.schema.maql import (
-    SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
+    SYNCHRONIZE, SYNCHRONIZE_PRESERVE, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
 )
 from gooddataclient.schema.state import State
 
@@ -326,16 +326,24 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
 
         return '\n'.join(maql)
 
-    def get_maql_delete(self, where_clause):
+    def get_maql_delete(self, where_clause=None, where_values=None, column=None):
         """
-        A function to retrieve the maql to delete rows
-        from a given dataset.
+        A function to retrieve the maql to delete rows from GD.
+        It can delete both rows of a given dataset, or values of
+        a dataset's attribute.
+        :param column:          column from which to delete the rows.
+                                if None it will delete rows from the dataset.
+                                (equivalent to delete rows from ConnectionPoint)
+        :param where_clause:    explicitly define the where clause (maql syntax).
+        :param where_values:    list of the column values to delete.
         """
-        return DELETE_ROW % {
-            'where_clause': where_clause,
-            'connection_point': self._connection_point,
-            'schema_name': to_identifier(self.schema_name),
-        }
+        if not self._has_cp and not column:
+            raise RowDeletionError(
+                'Dataset %s has no ConnectionPoint.'
+                ' Please provide a column to delete rows.' % self.schema_name
+            )
+        from_column = column if column else getattr(self, self._connection_point)
+        return from_column.get_delete_maql(to_identifier(self.schema_name), where_clause, where_values)
 
 
 class DateDimension(object):
