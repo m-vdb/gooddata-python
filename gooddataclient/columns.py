@@ -168,6 +168,8 @@ class Column(object):
                 'type': 'attr'
             }
         }
+        # fixme: right now, GD allows only label or fact in the where clause
+        # or attr in the delete from identifier.
 
     def get_drop_maql(self, schema_name, name):
         """
