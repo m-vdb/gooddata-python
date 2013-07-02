@@ -9,8 +9,8 @@ from gooddataclient.dashboard import Dashboard
 
 
 from tests.credentials import (
-    password, username, user_id, test_dashboards_id,
-    test_dashboard_id, test_dashboard_name,
+    password, username, user_id, test_dashboard_id,
+    test_tab_id, test_dashboard_name,
     test_dashboard_project_id
 )
 from tests import logger
@@ -31,8 +31,8 @@ class TestDashboard(unittest.TestCase):
         self.project = Project(self.connection)
         self.project.load(test_dashboard_project_id)
         self.dashboard = Dashboard(
-            self.project, user_id, test_dashboards_id,
-            test_dashboard_id, test_dashboard_name
+            self.project, user_id, test_dashboard_id,
+            test_tab_id, test_dashboard_name
         )
 
     def test_get_execution_context(self):

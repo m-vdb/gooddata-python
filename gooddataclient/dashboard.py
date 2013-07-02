@@ -19,21 +19,24 @@ class Dashboard(object):
 
     err_msg = 'An error occured while exporting dashboard %(id)s'
 
-    # ID of the dashboard as it appears in the report URL
-    ID = None
+    # In GD, when looking at a dashboard, the url is like obj/DASHBOARD_ID|TAB_ID
+    # DASHBOARD_ID is the ID of the container of all the dashboards
+    DASHBOARD_ID = None
+    # TAB_ID is the ID of the dashboard tab as it appears in the report URL
+    TAB_ID = None
     # Name of the dashboard as it appears in GD
     NAME = None
     # Size (in bytes) of the dashboard if the filtering criteria where too strong
     # so GD retrieved an empty dashboard
     EMPTY_SIZE = 0
 
-    def __init__(self, project, user_id, dashboards_id, id=None, name=None):
+    def __init__(self, project, user_id, dashboard_id=None, id=None, name=None):
         self.project = project
         self.connection = project.connection
-        self.id = id or self.ID
+        self.dashboard_id = dashboard_id or self.DASHBOARD_ID
+        self.id = id or self.TAB_ID
         self.name = name or self.NAME
         self.user_id = user_id
-        self.dashboards_id = dashboards_id
         self.execution_context_response_uri = None
         self.client_export_response_uri = None
         self.pdf_data = None
@@ -110,7 +113,7 @@ class Dashboard(object):
             "clientExport": {
                 "url": self.connection.HOST + "/dashboard.html" + wildcard_filter
                 + "#project=/gdc/projects/" + self.project.id
-                + "&dashboard=/gdc/md/" + self.project.id + "/obj/" + self.dashboards_id
+                + "&dashboard=/gdc/md/" + self.project.id + "/obj/" + self.dashboard_id
                 + "&tab=" + self.id + "&export=1&ctx=" + self.execution_context_response_uri,
                 "name": self.name
             }
