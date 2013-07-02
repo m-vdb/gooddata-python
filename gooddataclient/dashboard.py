@@ -1,5 +1,6 @@
 import urllib2
 import logging
+import os
 
 from gooddataclient.exceptions import DashboardExportError
 
@@ -18,8 +19,13 @@ class Dashboard(object):
 
     err_msg = 'An error occured while exporting dashboard %(id)s'
 
+    # ID of the dashboard as it appears in the report URL
     ID = None
+    # Name of the dashboard as it appears in GD
     NAME = None
+    # Size (in bytes) of the dashboard if the filtering criteria where too strong
+    # so GD retrieved an empty dashboard
+    EMPTY_SIZE = 0
 
     def __init__(self, project, user_id, dashboards_id, id=None, name=None):
         self.project = project
@@ -61,11 +67,17 @@ class Dashboard(object):
 
         self._poll_for_dashboard_data(common_filters, wildcard_filter)
 
-        with open(output_path + '.pdf', 'wb') as handle:
+        with open(output_path, 'wb') as handle:
             for block in self.pdf_data.iter_content(1024):
                 if not block:
                     break
                 handle.write(block)
+
+    def saved_dashboard_is_empty(self, pdf_path):
+        '''
+        Compares the size of a pdf file with the dashboards EMPTY_SIZE.
+        '''
+        return os.path.getsize(pdf_path) == self.EMPTY_SIZE
 
     def _poll_for_dashboard_data(self, common_filters, wildcard_filter):
         '''

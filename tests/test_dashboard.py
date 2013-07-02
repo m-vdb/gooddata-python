@@ -24,7 +24,7 @@ class TestDashboard(unittest.TestCase):
         'attribute': 'label.page.page_name',
         'value': 'fake_page'
     }
-    output_path = './fake_page'
+    output_path = './fake_page.pdf'
 
     def setUp(self):
         self.connection = Connection(username, password)
@@ -61,9 +61,17 @@ class TestDashboard(unittest.TestCase):
     def test_save_as_pdf(self):
         self.dashboard.save_as_pdf(self.common_filters, self.wildcard_filter, self.output_path)
         try:
-            os.remove(self.output_path + '.pdf')
+            os.remove(self.output_path)
         except:
             self.fail('pdf should be found')
+
+    def test_saved_dashboard_is_empty(self):
+        self.dashboard.save_as_pdf(self.common_filters, self.wildcard_filter, self.output_path)
+        self.dashboard.EMPTY_SIZE = 10  # fake pdf size
+        self.assertFalse(self.dashboard.saved_dashboard_is_empty(self.output_path))
+        self.dashboard.EMPTY_SIZE = 13109  # real pdf size
+        self.assertTrue(self.dashboard.saved_dashboard_is_empty(self.output_path))
+        os.remove(self.output_path)
 
 if __name__ == '__main__':
     unittest.main()
