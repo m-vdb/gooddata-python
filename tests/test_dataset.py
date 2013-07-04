@@ -99,6 +99,18 @@ class TestDataset(unittest.TestCase):
         self.assertRaises(DataSetNotFoundError, dataset.get_metadata, 'dummy_dataset')
         self.assertRaises(NotImplementedError, dataset.data)
 
+    def test_upload_dataset_with_csv(self):
+        department, Department = examples.examples[0]
+        self.dataset = Department(self.project)
+        self.dataset.create()
+        csv_input_path = 'tests/examples/department_data.csv'
+
+        self.dataset.upload(csv_input_path=csv_input_path)
+        dataset_metadata = self.dataset.get_metadata(name=self.dataset.schema_name)
+        self.assertTrue(dataset_metadata['dataUploads'])
+        self.assertEquals('OK', dataset_metadata['lastUpload']['dataUploadShort']['status'])
+
+
 
 if __name__ == '__main__':
     unittest.main()

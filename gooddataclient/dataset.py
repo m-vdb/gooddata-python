@@ -194,11 +194,16 @@ class Dataset(State):
         self.project.execute_maql(self.get_maql())
 
     def upload(self, keep_csv=False, csv_file=None,
-               no_upload=False,  full_upload=False, *args, **kwargs):
+               no_upload=False,  full_upload=False,
+               csv_input_path=None, *args, **kwargs):
         """
-        A function to upload dataset data. It tries to
+        A function to upload dataset data.
+        If csv_input_path is not set, it tries to
         call the data() method of the dataset to retrive
-        data. If `no_upload` is set to True, no dataset is
+        data.
+        Else it will upload the data contained in the file
+        with path = csv_input_path.
+        If `no_upload` is set to True, no dataset is
         created nor uploaded on the project.
 
         If `keep_csv` is set to True, a csv dump is kept, in
@@ -210,10 +215,12 @@ class Dataset(State):
             except DataSetNotFoundError:
                 self.create()
 
+        data = self.data(*args, **kwargs) if not csv_input_path else None
         dates, datetimes = self.get_datetime_column_names()
         dir_name = self.connection.webdav.upload(
-            self.data(*args, **kwargs), self.get_sli_manifest(full_upload),
-            dates, datetimes, keep_csv, csv_file, no_upload
+            data, self.get_sli_manifest(full_upload),
+            dates, datetimes, keep_csv, csv_file, no_upload,
+            csv_input_path
         )
 
         if not no_upload:
