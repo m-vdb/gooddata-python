@@ -9,8 +9,8 @@ from gooddataclient.dashboard import Dashboard
 
 
 from tests.credentials import (
-    password, username, user_id, test_dashboards_id,
-    test_dashboard_id, test_dashboard_name,
+    password, username, user_id, test_dashboard_id,
+    test_tab_id, test_dashboard_name,
     test_dashboard_project_id
 )
 from tests import logger
@@ -24,15 +24,15 @@ class TestDashboard(unittest.TestCase):
         'attribute': 'label.page.page_name',
         'value': 'fake_page'
     }
-    output_path = './fake_page'
+    output_path = './fake_page.pdf'
 
     def setUp(self):
         self.connection = Connection(username, password)
         self.project = Project(self.connection)
         self.project.load(test_dashboard_project_id)
         self.dashboard = Dashboard(
-            self.project, user_id, test_dashboards_id,
-            test_dashboard_id, test_dashboard_name
+            self.project, user_id, test_dashboard_id,
+            test_tab_id, test_dashboard_name
         )
 
     def test_get_execution_context(self):
@@ -61,9 +61,17 @@ class TestDashboard(unittest.TestCase):
     def test_save_as_pdf(self):
         self.dashboard.save_as_pdf(self.common_filters, self.wildcard_filter, self.output_path)
         try:
-            os.remove(self.output_path + '.pdf')
+            os.remove(self.output_path)
         except:
             self.fail('pdf should be found')
+
+    def test_saved_dashboard_is_empty(self):
+        self.dashboard.save_as_pdf(self.common_filters, self.wildcard_filter, self.output_path)
+        self.dashboard.EMPTY_SIZE = 10  # fake pdf size
+        self.assertFalse(self.dashboard.saved_dashboard_is_empty(self.output_path))
+        self.dashboard.EMPTY_SIZE = 13109  # real pdf size
+        self.assertTrue(self.dashboard.saved_dashboard_is_empty(self.output_path))
+        os.remove(self.output_path)
 
 if __name__ == '__main__':
     unittest.main()
