@@ -38,7 +38,7 @@ def format_dates(line, dates, datetimes):
         if date_value in FALSY_DATES:
             date_value = DATE_NULL
         # GD doesn't support dates > GD_MAX_YEAR
-        if date_value.year > GD_MAX_YEAR:
+        if date_value and date_value.year > GD_MAX_YEAR:
             date_value = date_value.replace(year=GD_MAX_YEAR)
 
         # date id
