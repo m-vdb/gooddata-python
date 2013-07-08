@@ -203,7 +203,7 @@ def get_references(dataset_name, sli_manifest):
     :param sli_manifest:         the SLI manifest of the dataset
     """
     ref_list = []
-    pattern = r'f_([a-z]+)\.nm_[a-z_]+'
+    pattern = r'f_([a-z_]+)\.nm_[a-z_]+'
     for part in sli_manifest:
         match = re.match(pattern, part["columnName"])
         if match:
