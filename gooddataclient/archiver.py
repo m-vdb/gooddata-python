@@ -26,9 +26,8 @@ def write_tmp_file(content):
     return filename of the created temporary file
     '''
     fp, filename = mkstemp()
-
-    with open(filename, 'w+b') as file:
-        file.write(content)
+    os.write(fp, content)
+    os.close(fp)
 
     return filename
 
@@ -44,6 +43,8 @@ def write_tmp_csv_file(csv_data, sli_manifest, dates, datetimes):
     '''
     fieldnames = [part['columnName'] for part in sli_manifest['dataSetSLIManifest']['parts']]
     fp, filename = mkstemp()
+    # FIXME: shouldn't close and reopen the file
+    os.close(fp)
 
     with open(filename, 'w+b') as file:
         writer = csv.DictWriter(
@@ -72,6 +73,8 @@ def write_tmp_zipfile(files):
     return filename of the created temporary zip file
     '''
     fp, filename = mkstemp()
+    # FIXME: shouldn't close and reopen the file
+    os.close(fp)
 
     with ZipFile(filename, "w") as zip_file:
         for path, name in files:
@@ -81,7 +84,8 @@ def write_tmp_zipfile(files):
 
 
 def create_archive(
-    data, sli_manifest, dates, datetimes, keep_csv=False, csv_file=None
+    data, sli_manifest, dates, datetimes, keep_csv=False,
+    csv_file=None, csv_input_path=None
 ):
     """
     Zip the data and sli_manifest files to an archive.
@@ -89,10 +93,14 @@ def create_archive(
 
     @param data: csv data
     @param sli_manifest: json sli_manifest
+    @param csv_input_path: create archive with this
+                           csv data instead of data
 
     return the filename to the temporary zip file
     """
-    if isinstance(data, str):
+    if csv_input_path:
+        data_path = csv_input_path
+    elif isinstance(data, str):
         data_path = write_tmp_file(data)
     elif isinstance(data, Iterable):
         data_path = write_tmp_csv_file(data, sli_manifest, dates, datetimes)
@@ -112,7 +120,8 @@ def create_archive(
         if not csv_file:
             raise TypeError('Keep csv option with no csv file path')
         shutil.move(data_path, csv_file)
-    else:
+    # do not delete the csv file if push of static data
+    elif not csv_input_path:
         os.remove(data_path)
     os.remove(sli_manifest_path)
     return archive

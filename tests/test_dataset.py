@@ -4,7 +4,7 @@ import os
 
 from gooddataclient.project import Project, delete_projects_by_name
 from gooddataclient.connection import Connection
-from gooddataclient.columns import Reference
+from gooddataclient.columns import Date
 from gooddataclient.dataset import DateDimension, Dataset
 from gooddataclient.exceptions import MaqlValidationFailed, DataSetNotFoundError
 
@@ -19,6 +19,7 @@ class TestDataset(unittest.TestCase):
 
     def setUp(self):
         self.connection = Connection(username, password)
+        delete_projects_by_name(self.connection, test_project_name)
         self.project = Project(self.connection).create(test_project_name, gd_token)
 
     def tearDown(self):
@@ -56,6 +57,20 @@ class TestDataset(unittest.TestCase):
             sli_manifest = dataset.get_sli_manifest(full_upload=True)
             self.assertEquals('FULL', sli_manifest['dataSetSLIManifest']['parts'][0]['mode'])
 
+    def test_dates_sli_manifest(self):
+        _datetime = Date(title='Created at', schemaReference='created_at', datetime=True)
+        _datetime.set_name_and_schema('_name', '_schema')
+        self.assertEquals(
+            'yyyy-MM-dd HH:mm:SS',
+            _datetime.get_sli_manifest_part(full_upload=False)[0]['constraints']['date']
+        )
+        _date = Date(title='Created at', schemaReference='created_at', datetime=False)
+        _date.set_name_and_schema('_name', '_schema')
+        self.assertEquals(
+            'yyyy-MM-dd',
+            _date.get_sli_manifest_part(full_upload=False)[0]['constraints']['date']
+        )
+
     def test_no_upload(self):
         '''
         test that no connection to GD API is made.
@@ -83,6 +98,18 @@ class TestDataset(unittest.TestCase):
         dataset = DummyDataset(self.project)
         self.assertRaises(DataSetNotFoundError, dataset.get_metadata, 'dummy_dataset')
         self.assertRaises(NotImplementedError, dataset.data)
+
+    def test_upload_dataset_with_csv(self):
+        department, Department = examples.examples[0]
+        self.dataset = Department(self.project)
+        self.dataset.create()
+        csv_input_path = 'tests/examples/department_data.csv'
+
+        self.dataset.upload(csv_input_path=csv_input_path)
+        dataset_metadata = self.dataset.get_metadata(name=self.dataset.schema_name)
+        self.assertTrue(dataset_metadata['dataUploads'])
+        self.assertEquals('OK', dataset_metadata['lastUpload']['dataUploadShort']['status'])
+
 
 
 if __name__ == '__main__':

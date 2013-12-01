@@ -61,12 +61,12 @@ def retrieve_attr_tuples(column_json, pk_identifier, dlc_info):
         if label_type == 'GDC.link':
             label_column = HyperLink(
                 title=label_title, reference=label_reference,
-                dataType=data_type
+                dataType=data_type, references_cp=attr_is_cp(pk_identifier, dataset)
             )
         else:
             label_column = Label(
                 title=label_title, reference=label_reference,
-                dataType=data_type
+                dataType=data_type, references_cp=attr_is_cp(pk_identifier, dataset)
             )
         tuples.append((label_name, label_column))
 
@@ -126,12 +126,9 @@ def retrieve_fact_tuples(column_json, dlc_info):
     if category == 'dt':
         column_title = column_title.replace(' (Date)', '')
         datetime = dlc_info.get('%s__time' % column_name, {}).get('datetime', False)
-        date_format = 'yyyy-MM-dd'
-        if datetime:
-            date_format = 'yyyy-MM-dd HH:mm:SS'
         return [
             (column_name, Date(
-                    title=column_title, format=date_format,
+                    title=column_title,
                     schemaReference=dlc_info[column_name]['schemaReference'],
                     datetime=datetime
             ))
@@ -156,12 +153,12 @@ def retrieve_dlc_info(dataset_name, column_json, sli_manifest):
     else:
         data_type = column_type
 
-    match = re.match("d_[a-z_]+\.nm_([a-z_]+)", identifier)
-    match_fact = re.match("f_[a-z_]+.f_([a-z_]+)", identifier)
-    match_cp = re.match("f_[a-z_]+\.nm_([a-z_]+)", identifier)
-    match_dt = re.match("f_%s\.dt_([a-z_]+)_id" % dataset_name, identifier)
-    match_tm = re.match("f_%s\.tm_([a-z_]+)" % dataset_name, identifier)
-    match_id = re.match("f_%s\.([a-z_]+)_id" % dataset_name, identifier)
+    match = re.match("d_[a-z_1-9]+\.nm_([a-z_1-9]+)", identifier)
+    match_fact = re.match("f_[a-z_1-9]+.f_([a-z_1-9]+)", identifier)
+    match_cp = re.match("f_[a-z_1-9]+\.nm_([a-z_1-9]+)", identifier)
+    match_dt = re.match("f_%s\.dt_([a-z_1-9]+)_id" % dataset_name, identifier)
+    match_tm = re.match("f_%s\.tm_([a-z_1-9]+)" % dataset_name, identifier)
+    match_id = re.match("f_%s\.([a-z_1-9]+)_id" % dataset_name, identifier)
 
     match = match or match_cp or match_fact
     if match:
@@ -206,12 +203,12 @@ def get_references(dataset_name, sli_manifest):
     :param sli_manifest:         the SLI manifest of the dataset
     """
     ref_list = []
-    pattern = r'f_([a-z]+)\.nm_[a-z_]+'
+    pattern = r'f_([a-z_]+)\.nm_[a-z_]+'
     for part in sli_manifest:
         match = re.match(pattern, part["columnName"])
         if match:
             if match.group(1) != dataset_name:
-                _, schema_ref, reference, __ = part["populates"][0].split('.')
+                _, schema_ref, reference = part["populates"][0].split('.')[:3]
                 ref_list.append((schema_ref, reference))
 
     return dict(ref_list)

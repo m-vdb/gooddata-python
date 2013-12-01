@@ -7,3 +7,5 @@ from test_dataset import *
 from test_state import *
 from test_migration import *
 from test_report import *
+from test_dashboard import *
+from test_delete import *

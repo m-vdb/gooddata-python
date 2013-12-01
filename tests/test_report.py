@@ -5,8 +5,12 @@ import os
 from gooddataclient.connection import Connection
 from gooddataclient.project import Project
 from gooddataclient.report import Report
+from gooddataclient.exceptions import ReportExportFailed
 
-from tests.credentials import password, username, test_report_id, report_project_id
+from tests.credentials import (
+    password, username, test_report_id, report_project_id,
+    test_empty_report_id
+)
 from tests import logger
 
 logger.set_log_level(debug=('-v' in sys.argv))
@@ -29,11 +33,19 @@ class TestReport(unittest.TestCase):
         report.export_report()
         self.assertTrue(report.export_download_uri)
 
+        report.exec_result = 'fake'
+        self.assertRaises(ReportExportFailed, report.export_report)
+
     def test_get_report(self):
         report = Report(self.project, test_report_id)
         report.get_report()
         self.assertTrue(report.report_content)
         self.assertFalse(report.report_content[0] == '{')
+
+    def test_get_empty_report(self):
+        report = Report(self.project, test_empty_report_id)
+        report.get_report()
+        self.assertEquals(report.report_content, '')
 
     def test_save_report(self):
         report = Report(self.project, test_report_id)

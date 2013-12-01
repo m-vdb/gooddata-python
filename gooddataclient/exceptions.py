@@ -76,5 +76,13 @@ class ReportRetrievalFailed(GoodDataClientError):
     pass
 
 
+class DashboardExportError(GoodDataClientError):
+    pass
+
+
+class RowDeletionError(GoodDataClientError):
+    pass
+
+
 def get_api_msg(err_json):
     return err_json['message'] % tuple(err_json['parameters'])

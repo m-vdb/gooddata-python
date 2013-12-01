@@ -87,7 +87,7 @@ TIME_DROP = ('DROP IF EXISTS {tm.dt.%(schema_name)s.%(name)s} CASCADE;\n'
              'ALTER ATTRIBUTE {attr.time.second.of.day.%(schemaReference)s} '
              'DROP KEYS {f_%(schema_name)s.tm_%(name)s_id};\n')
 
-REFERENCE_DROP = 'ALTER ATTRIBUTE {attr.%(schemaReference)s.%(reference)s} DROP KEYS {%(identifier)s}\n;'
+REFERENCE_DROP = 'ALTER ATTRIBUTE {attr.%(schemaReference)s.%(reference)s} DROP KEYS {%(identifier)s};\n'
 
 LABEL_DROP = 'ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} DROP LABELS {label.%(schema_name)s.%(reference)s.%(name)s};\n'
 
@@ -113,4 +113,6 @@ HYPERLINK_ALTER_TITLE = ('ALTER ATTRIBUTE {attr.%(schema_name)s.%(reference)s} '
 # Row deletion #
 ################
 
-DELETE_ROW = 'DELETE FROM {attr.%(schema_name)s.%(connection_point)s} WHERE %(where_clause)s;'
+DELETE_ROW = 'DELETE FROM %(from_identifier)s WHERE %(where_clause)s;'
+DELETE_IDENTIFIER = '{%(type)s.%(schema_name)s.%(column_name)s}'
+DELETE_WHERE_CLAUSE = '%(where_identifier)s IN (%(where_clause_values)s)'

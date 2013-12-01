@@ -3,9 +3,7 @@ import logging
 import inspect
 import re
 
-from requests.exceptions import HTTPError
-
-from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed
+from gooddataclient.exceptions import DataSetNotFoundError, MaqlValidationFailed, RowDeletionError
 from gooddataclient import text
 from gooddataclient.columns import (
     Column, Date, Attribute, ConnectionPoint, Label, Reference, Fact
@@ -13,7 +11,7 @@ from gooddataclient.columns import (
 from gooddataclient.text import to_identifier, to_title
 from gooddataclient.archiver import CSV_DATA_FILENAME
 from gooddataclient.schema.maql import (
-    SYNCHRONIZE, SYNCHRONIZE_PRESERVE, DELETE_ROW, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
+    SYNCHRONIZE, SYNCHRONIZE_PRESERVE, CP_DEFAULT_NAME, CP_DEFAULT_CREATE
 )
 from gooddataclient.schema.state import State
 
@@ -36,9 +34,11 @@ class Dataset(State):
             column.set_name_and_schema(to_identifier(name), to_identifier(self.schema_name))
             # need to mark the labels referencing
             # connection points, they are different
-            if isinstance(column, Label) and \
-               isinstance(getattr(self, column.reference), ConnectionPoint):
-                column.references_cp = True
+            if isinstance(column, Label):
+                if isinstance(getattr(self, column.reference), ConnectionPoint):
+                    column.references_cp = True
+                else:
+                    column.references_cp = False
             # need to know which column is connection point
             if isinstance(column, ConnectionPoint):
                 self._connection_point = name
@@ -194,11 +194,16 @@ class Dataset(State):
         self.project.execute_maql(self.get_maql())
 
     def upload(self, keep_csv=False, csv_file=None,
-               no_upload=False,  full_upload=False, *args, **kwargs):
+               no_upload=False,  full_upload=False,
+               csv_input_path=None, *args, **kwargs):
         """
-        A function to upload dataset data. It tries to
+        A function to upload dataset data.
+        If csv_input_path is not set, it tries to
         call the data() method of the dataset to retrive
-        data. If `no_upload` is set to True, no dataset is
+        data.
+        Else it will upload the data contained in the file
+        with path = csv_input_path.
+        If `no_upload` is set to True, no dataset is
         created nor uploaded on the project.
 
         If `keep_csv` is set to True, a csv dump is kept, in
@@ -210,10 +215,12 @@ class Dataset(State):
             except DataSetNotFoundError:
                 self.create()
 
+        data = self.data(*args, **kwargs) if not csv_input_path else None
         dates, datetimes = self.get_datetime_column_names()
         dir_name = self.connection.webdav.upload(
-            self.data(*args, **kwargs), self.get_sli_manifest(full_upload),
-            dates, datetimes, keep_csv, csv_file, no_upload
+            data, self.get_sli_manifest(full_upload),
+            dates, datetimes, keep_csv, csv_file, no_upload,
+            csv_input_path
         )
 
         if not no_upload:
@@ -326,16 +333,24 @@ CREATE DATASET {dataset.%s} VISUAL(TITLE "%s");
 
         return '\n'.join(maql)
 
-    def get_maql_delete(self, where_clause):
+    def get_maql_delete(self, where_clause=None, where_values=None, column=None):
         """
-        A function to retrieve the maql to delete rows
-        from a given dataset.
+        A function to retrieve the maql to delete rows from GD.
+        It can delete both rows of a given dataset, or values of
+        a dataset's attribute.
+        :param column:          column from which to delete the rows.
+                                if None it will delete rows from the dataset.
+                                (equivalent to delete rows from ConnectionPoint)
+        :param where_clause:    explicitly define the where clause (maql syntax).
+        :param where_values:    list of the column values to delete.
         """
-        return DELETE_ROW % {
-            'where_clause': where_clause,
-            'connection_point': self._connection_point,
-            'schema_name': to_identifier(self.schema_name),
-        }
+        if not self._has_cp and not column:
+            raise RowDeletionError(
+                'Dataset %s has no ConnectionPoint.'
+                ' Please provide a column to delete rows.' % self.schema_name
+            )
+        from_column = column if column else getattr(self, self._connection_point)
+        return from_column.get_delete_maql(to_identifier(self.schema_name), where_clause, where_values)
 
 
 class DateDimension(object):
@@ -385,21 +400,17 @@ class DateDimension(object):
         It is only call if we want to create the date dimension
         using a name.
         """
+        err_msg = 'Could not check if date exists: %(status_code)s'
+        response = self.connection.get(
+            self.DATASETS_URI % self.project.id,
+            raise_cls=MaqlValidationFailed,
+            err_msg=err_msg
+        )
         try:
-            response = self.connection.get(self.DATASETS_URI % self.project.id)
-            response.raise_for_status()
-        except HTTPError, err:
-            err_msg = 'Could not check if date exists: %(status_code)s'
-            raise MaqlValidationFailed(
-                err_msg, response=err.response,
-                status_code=err.response.status_code
-            )
-        else:
-            try:
-                sets = response.json()['dataSetsInfo']['sets']
-            except KeyError:
-                sets = []
-            return bool(filter(lambda x: x['meta']['identifier'] == '%s.dataset.dt' % name.lower(), sets))
+            sets = response.json()['dataSetsInfo']['sets']
+        except KeyError:
+            sets = []
+        return bool(filter(lambda x: x['meta']['identifier'] == '%s.dataset.dt' % name.lower(), sets))
 
     def upload_time(self, name):
         data = open(os.path.join(os.path.dirname(__file__), 'resources',

@@ -2,7 +2,7 @@ import sys
 import unittest
 from xml.dom.minidom import parseString
 
-from gooddataclient.schema.utils import get_xml_schema
+from gooddataclient.schema.utils import get_xml_schema, get_references
 from gooddataclient.project import Project
 
 from tests import logger, examples
@@ -29,6 +29,24 @@ class TestSchema(unittest.TestCase):
                                                 ', '.join(n.nodeName for n in gen_schema.childNodes[0].childNodes[1].childNodes),
                                                 example))
 
+    def test_get_references(self):
+        sli_manifest = [
+            {
+                u'populates': [u'label.creative.creative_id'],
+                u'columnName': u'f_creative.nm_creative_id',
+                u'referenceKey': 1, u'mode': u'FULL'
+            }, {
+                u'populates': [u'label.creative.creative_id.else'],
+                u'columnName': u'f_creative.nm_creative_id',
+                u'referenceKey': 1, u'mode': u'FULL'
+            }
+        ]
+        dataset_name = 'adgroup'
+
+        try:
+            get_references(dataset_name, sli_manifest)
+        except:
+            self.fail()
 
 if __name__ == '__main__':
     unittest.main()

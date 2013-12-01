@@ -1,4 +1,4 @@
-from gooddataclient.columns import Reference
+from gooddataclient.columns import Reference, ConnectionPoint
 from gooddataclient.exceptions import DataSetNotFoundError
 from gooddataclient.schema.utils import (
     retrieve_column_tuples, retrieve_dlc_info, get_references, attr_is_cp,
@@ -180,6 +180,22 @@ class State(object):
 
         return dict(remote_columns)
 
+    def get_remote_diff(self):
+        """
+        A method to retrieve the remote state of the dataset,
+        and compare it the current class state. It is based on the
+        DiffState object.
+        """
+        remote_columns = self.get_remote_columns()
+        return DiffState(remote_columns, dict(self._columns)).get_diff_state()
+
+    def is_synchronised(self):
+        """
+        A method to check that the remote diff is empty.
+        """
+        remote_diff = self.get_remote_diff()
+        return not (remote_diff['added'] or remote_diff['altered'] or remote_diff['deleted'])
+
     def has_column(self, col_name, attribute=False, fact=False, date=False, reference=False, title=None):
         """
         A function to check that a dataset has a specific column
@@ -270,3 +286,67 @@ class State(object):
 
     def has_reference(self, reference_name):
         return self.has_column(reference_name, reference=True)
+
+
+class DiffState(object):
+
+    def __init__(self, old_state, new_state):
+        self.old_state, self.new_state = old_state, new_state
+        self.old_keys = set(old_state)
+        self.new_keys = set(new_state)
+        self.intersect = self.new_keys.intersection(self.old_keys)
+        self.added_columns = self.get_added_columns()
+        self.deleted_columns = self.get_deleted_columns()
+        self.altered_columns = self.get_altered_columns()
+        self.handle_factsof_if_needed()
+
+    def get_diff_state(self):
+        """
+        A method to get the differences between two states of a dataset.
+
+        :return:                a dict with three keys referencing columns:
+                                - added
+                                - altered
+                                - deleted
+        """
+        return {
+            'added': self.added_columns,
+            'altered': self.altered_columns,
+            'deleted': self.deleted_columns
+        }
+
+    def get_added_columns(self):
+        added_keys = self.new_keys - self.intersect
+        return dict(((key, self.new_state[key]) for key in added_keys))
+
+    def get_deleted_columns(self):
+        deleted_keys = self.old_keys - self.intersect
+        return dict(((key, self.old_state[key]) for key in deleted_keys))
+
+    def get_altered_columns(self):
+        altered_columns = {}
+        for key in self.intersect:
+            if self.new_state[key] != self.old_state[key]:
+                altered_columns[key] = {
+                    'old': self.old_state[key],
+                    'new': self.new_state[key],
+                }
+
+        return altered_columns
+
+    def handle_factsof_if_needed(self):
+        '''
+        If a dataset has no ConnectionPoint, GD creates one
+        called factsof.
+        The migration engine when comparing old columns and new ones
+        will detect that factsof exists only on GD, and try to delete it.
+        We want to delete it only if there is a new ConnectionPoint.
+        '''
+        if 'factsof' in self.deleted_columns:
+            cp_found = False
+            for value in self.added_columns.itervalues():
+                if isinstance(value, ConnectionPoint):
+                    cp_found = True
+                    break
+            if not cp_found:
+                del self.deleted_columns['factsof']

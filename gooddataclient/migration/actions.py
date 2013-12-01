@@ -86,7 +86,7 @@ class AlterColumn(Action):
             self.new_column.references_cp = self.column.references_cp
         # in other case, that means that we explicitely want
         # to change this attribute
-        else:
+        elif self.new_column.references_cp is None:
             self.new_column.references_cp = self.label_references_cp
 
         self.new_attrs = get_changed_attributes(self.new_column.__dict__, self.column.__dict__)
@@ -95,18 +95,20 @@ class AlterColumn(Action):
         self.new_attrs.pop('folder_title', None)
 
         self.alteration_state = self._alteration_state()
-        
+
     def _alteration_state(self):
         # if same column classes
-        same_columns = (
-            isinstance(self.column, self.new_column.__class__) &
-            isinstance(self.new_column, self.column.__class__)
-        )
+        same_columns = issubclass(self.new_column.__class__, self.column.__class__)
 
         # if Label -> HyperLink or the other way around
         hyperlink = False
-        if not same_columns:
-            hyperlink = isinstance(self.column, Label) & isinstance(self.new_column, Label)
+        if (
+            ((isinstance(self.column, Label) and isinstance(self.new_column, HyperLink))
+             or (isinstance(self.column, HyperLink) and isinstance(self.new_column, Label)))
+            and not (isinstance(self.column, HyperLink) and isinstance(self.new_column, HyperLink))
+        ):
+            same_columns = False
+            hyperlink = True
 
         # if simple alteration
         simple_alter = set(self.new_attrs).issubset(self.SIMPLE_ALTER)
@@ -142,23 +144,29 @@ class AlterColumn(Action):
 class DeleteRow(object):
     """
     An action to generate the maql to delete the rows of
-    a dataset, given a criterion.
+    a dataset or a dataset's column, given a criterion.
     """
 
-    def __init__(self, dataset, where_clause):
+    def __init__(self, dataset, column=None, where_clause=None, where_values=None):
         """
         Initialize this action. The `dataset` parameter
-        should be an instance of a dataset class, and
-        the where clause should be follow GD form.
+        should be an instance of a dataset class.
+        If column is set, it will delete rows from the dataset's column
+        instead of dataset rows.
+        If where_clause is set, it will override the where clause sent to GD.
+        It should be follow GD form.
+        Else if where_values is set, it will delete the rows of the selected column
+        where the value is in where_values. It should be a list.
         """
         self.schema_name = dataset.schema_name
         self.dataset = dataset
+        self.column = column
+        self.where_values = where_values
         self.where_clause = where_clause
 
     def get_maql(self):
-        # FIXME: for now, we need to pass a manual WHERE clause,
-        #        found in GD documentation. In the future, when
-        #        we want to programatically migrate datasets,
-        #        we may need to change that, and construct the
-        #        where clause from objects.
-        return self.dataset.get_maql_delete(self.where_clause)
+        return self.dataset.get_maql_delete(
+            where_clause=self.where_clause,
+            where_values=self.where_values,
+            column=self.column
+        )

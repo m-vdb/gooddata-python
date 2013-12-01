@@ -8,12 +8,14 @@ from gooddataclient.schema.maql import (
     # deletion
     FACT_DROP, ATTRIBUTE_DROP, DATE_DROP, TIME_DROP,
     REFERENCE_DROP, LABEL_DROP,
+    DELETE_ROW, DELETE_IDENTIFIER, DELETE_WHERE_CLAUSE,
     # alteration
     ATTRIBUTE_ALTER_TITLE, FACT_ALTER_TITLE,
     DATE_ALTER_TITLE, LABEL_ALTER_TITLE,
     HYPERLINK_ALTER_TITLE, TIME_ALTER_TITLE
 )
-from gooddataclient.text import to_identifier, to_title
+from gooddataclient.text import to_identifier, to_title, gd_repr
+from gooddataclient.exceptions import RowDeletionError
 
 
 class Column(object):
@@ -29,7 +31,7 @@ class Column(object):
 
     def __init__(
         self, title, folder=None, reference=None, schemaReference=None,
-        dataType=None, datetime=False, format=None, references_cp=False
+        dataType=None, datetime=False, references_cp=None
     ):
         self.title = to_title(title)
         self.folder = to_identifier(folder)
@@ -38,10 +40,29 @@ class Column(object):
         self.schemaReference = to_identifier(schemaReference)
         self.dataType = dataType
         self.datetime = datetime
-        self.format = format
         # an attribute useful for labels,
         # to know if they reference a connection point
         self.references_cp = references_cp
+
+    def __eq__(self, other):
+        """
+        Useful to compare two columns with ==.
+        """
+        return (
+            self.ldmType == other.ldmType and
+            self.title == other.title and
+            self.reference == other.reference and
+            self.schemaReference == other.schemaReference and
+            self.dataType == other.dataType and
+            self.datetime == other.datetime and
+            self.references_cp == other.references_cp
+        )
+
+    def __ne__(self, other):
+        """
+        Useful to compare two columns with !=.
+        """
+        return not self == other
 
     def __getitem__(self, item):
         """
@@ -52,7 +73,7 @@ class Column(object):
     def get_schema_values(self):
         values = []
         for key in ('name', 'title', 'folder', 'ldmType', 'reference', 'schemaReference',
-                    'dataType', 'datetime', 'format'):
+                    'dataType', 'datetime'):
             value = getattr(self, key)
             if value:
                 if isinstance(value, bool):
@@ -71,8 +92,6 @@ class Column(object):
                 }
         if self.referenceKey:
             part["referenceKey"] = 1
-        if self.format:
-            part['constraints'] = {'date': self.format}
         try:
             part['populates'] = self.populates()
         except NotImplementedError:
@@ -117,6 +136,40 @@ class Column(object):
             maql += self.time.get_maql()
 
         return maql % self
+
+    def get_delete_maql(self, schema_name, where_clause=None, where_values=None):
+        """
+        A function to retrieve the maql to delete the rows from the current column,
+        with a where_clause or with where_values.
+
+        :param schema_name:     the name of the dataset that contains the column.
+        :param where_clause:    explicitly define the where clause (maql syntax).
+        :param where_values:    list of the values to delete.
+        """
+        if not where_clause:
+            if not where_values:
+                raise RowDeletionError('Please set where_clause or where_values')
+
+            where_clause_values = ', '.join(gd_repr(value) for value in where_values)
+            where_clause = DELETE_WHERE_CLAUSE % {
+                'where_clause_values': where_clause_values,
+                'where_identifier': DELETE_IDENTIFIER % {
+                    'column_name': self.name,
+                    'schema_name': schema_name,
+                    'type': 'label'
+                }
+            }
+
+        return DELETE_ROW % {
+            'where_clause': where_clause,
+            'from_identifier': DELETE_IDENTIFIER % {
+                'column_name': self.name,
+                'schema_name': schema_name,
+                'type': 'attr'
+            }
+        }
+        # fixme: right now, GD allows only label or fact in the where clause
+        # or attr in the delete from identifier.
 
     def get_drop_maql(self, schema_name, name):
         """
@@ -222,6 +275,8 @@ class Date(Fact):
     TEMPLATE_DATATYPE = None
 
     def __init__(self, **kwargs):
+        # this is mandatory for dates
+        kwargs['dataType'] = 'DATE'
         super(Date, self).__init__(**kwargs)
         if self.datetime:
             self.time = Time(**kwargs)
@@ -251,7 +306,8 @@ class Date(Fact):
     def get_sli_manifest_part(self, full_upload):
         parts = super(Date, self).get_sli_manifest_part(full_upload)
         parts.append(self.get_date_dt_column(full_upload))
-
+        format = 'yyyy-MM-dd HH:mm:SS' if self.datetime else 'yyyy-MM-dd'
+        parts[0]['constraints'] = {'date': format}
         if self.datetime:
             parts.extend(self.time.get_sli_manifest_part(full_upload))
 
@@ -300,6 +356,11 @@ class Reference(Column):
     TEMPLATE_CREATE = REFERENCE_CREATE
     TEMPLATE_DROP = REFERENCE_DROP
     referenceKey = True
+
+    def __init__(self, *args, **kwargs):
+        super(Reference, self).__init__(*args, **kwargs)
+        # title is irrelevent for references
+        self.title = None
 
     def populates(self):
         return ["label.%(schemaReference)s.%(reference)s" % self]

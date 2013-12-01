@@ -8,6 +8,8 @@ DATE_NULL = ''
 FALSY_DATES = (None, '', 'NULL')
 BOOL_TRUE = 'yes'
 BOOL_FALSE = 'no'
+# GD doesn't support dates > 2049
+GD_MAX_YEAR = 2049
 
 
 def get_date_id(date):
@@ -35,6 +37,9 @@ def format_dates(line, dates, datetimes):
         date_value = line[date_field]
         if date_value in FALSY_DATES:
             date_value = DATE_NULL
+        # GD doesn't support dates > GD_MAX_YEAR
+        if date_value and date_value.year > GD_MAX_YEAR:
+            date_value = date_value.replace(year=GD_MAX_YEAR)
 
         # date id
         line['%s_dt' % date_field] = get_date_id(date_value)
